@@ -1,0 +1,14 @@
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.mypy_cache/
+
+# Environment variables
+backend/.env
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db

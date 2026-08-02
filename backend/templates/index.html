@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Litology — Your literary life</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14131f;
+      --stone: #8a8685;
+      --paper: #fff8eb;
+      --cream: #ffeccc;
+      --sand: #f2d0a4;
+      --terracotta: #d9825b;
+      --moss: #536b45;
+      --sage: #c8d6af;
+      --white: #fffdf7;
+      --line: rgba(20, 19, 31, 0.12);
+      --shadow: 0 22px 70px rgba(20, 19, 31, 0.13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 1180px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 3%, rgba(242, 208, 164, 0.48), transparent 24%),
+        radial-gradient(circle at 92% 8%, rgba(200, 214, 175, 0.58), transparent 24%),
+        var(--paper);
+      font-family: "Inter", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .shell {
+      width: 1440px;
+      min-height: 1024px;
+      margin: 0 auto;
+      padding: 28px 42px 44px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .shell::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border: 1px solid rgba(217, 130, 91, 0.22);
+      border-radius: 50%;
+      top: -142px;
+      right: 254px;
+      pointer-events: none;
+    }
+
+    .topbar {
+      height: 76px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      font-family: "Playfair Display", serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px 12px 12px 3px;
+      display: grid;
+      place-items: center;
+      color: var(--paper);
+      background: var(--ink);
+      box-shadow: 8px 8px 0 var(--sand);
+      font-size: 18px;
+    }
+
+    .mode-switch {
+      display: flex;
+      gap: 5px;
+      padding: 5px;
+      background: rgba(255, 255, 255, 0.48);
+      border: 1px solid rgba(20, 19, 31, 0.1);
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+    }
+
+    .mode {
+      min-width: 96px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--stone);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      transition: 160ms ease;
+    }
+
+    .mode.active {
+      color: var(--paper);
+      background: var(--ink);
+      box-shadow: 0 5px 14px rgba(20, 19, 31, 0.18);
+    }
+
+    .tools {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon-button, .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.52);
+      display: grid;
+      place-items: center;
+    }
+
+    .avatar {
+      border: 0;
+      background: var(--terracotta);
+      color: var(--paper);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .hello {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      padding: 34px 2px 25px;
+    }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      text-transform: uppercase;
+      color: var(--terracotta);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      margin-bottom: 0;
+      font-family: "Playfair Display", serif;
+      font-size: 42px;
+      font-weight: 600;
+      line-height: 1.08;
+      letter-spacing: -1.2px;
+    }
+
+    h1 em {
+      color: var(--moss);
+      font-weight: 500;
+    }
+
+    .date-note {
+      color: var(--stone);
+      font-family: "Playfair Display", serif;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1.68fr 0.92fr;
+      gap: 22px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 22px;
+      align-content: start;
+    }
+
+    .continue-card {
+      min-height: 322px;
+      display: grid;
+      grid-template-columns: 1fr 284px;
+      overflow: hidden;
+      border-radius: 28px;
+      background: var(--ink);
+      color: var(--paper);
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .continue-card::after {
+      content: "L";
+      position: absolute;
+      right: 250px;
+      top: -65px;
+      color: rgba(255, 248, 235, 0.035);
+      font-family: "Playfair Display", serif;
+      font-size: 310px;
+      line-height: 1;
+    }
+
+    .continue-copy {
+      padding: 38px 38px 34px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .continue-copy .eyebrow { color: var(--sand); }
+
+    .continue-copy h2 {
+      max-width: 500px;
+      margin-bottom: 10px;
+      font-family: "Playfair Display", serif;
+      font-size: 35px;
+      font-weight: 600;
+      line-height: 1.12;
+      letter-spacing: -0.7px;
+    }
+
+    .book-meta {
+      margin-bottom: 30px;
+      color: rgba(255, 248, 235, 0.62);
+      font-size: 13px;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      width: 380px;
+      margin-bottom: 9px;
+      color: rgba(255, 248, 235, 0.7);
+      font-size: 11px;
+    }
+
+    .progress {
+      width: 380px;
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .progress span {
+      display: block;
+      width: 62%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--terracotta);
+    }
+
+    .primary-action {
+      margin-top: 30px;
+      padding: 12px 17px;
+      border: 0;
+      border-radius: 12px;
+      color: var(--ink);
+      background: var(--cream);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .book-stage {
+      margin: 24px 25px 24px 0;
+      border-radius: 21px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.18), transparent 45%),
+        var(--moss);
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .book-stage::before,
+    .book-stage::after {
+      content: "";
+      position: absolute;
+      border: 1px solid rgba(255, 248, 235, 0.24);
+      border-radius: 50%;
+    }
+
+    .book-stage::before { width: 240px; height: 240px; }
+    .book-stage::after { width: 160px; height: 160px; }
+
+    .cover {
+      width: 148px;
+      height: 214px;
+      padding: 23px 18px;
+      border-radius: 2px 10px 10px 2px;
+      color: var(--ink);
+      background: var(--sand);
+      box-shadow: -10px 13px 0 rgba(20, 19, 31, 0.2), 0 28px 45px rgba(20,19,31,.35);
+      transform: rotate(3deg);
+      position: relative;
+      z-index: 1;
+    }
+
+    .cover small {
+      display: block;
+      margin-bottom: 21px;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .cover strong {
+      display: block;
+      font-family: "Playfair Display", serif;
+      font-size: 23px;
+      line-height: 1.02;
+    }
+
+    .cover-line {
+      width: 34px;
+      height: 3px;
+      margin-top: 16px;
+      background: var(--terracotta);
+    }
+
+    .panel {
+      border: 1px solid rgba(20, 19, 31, 0.09);
+      border-radius: 24px;
+      background: rgba(255, 253, 247, 0.68);
+      box-shadow: 0 10px 30px rgba(20, 19, 31, 0.055);
+      backdrop-filter: blur(10px);
+    }
+
+    .shelf {
+      padding: 25px 27px 27px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-family: "Playfair Display", serif;
+      font-size: 23px;
+      font-weight: 600;
+    }
+
+    .text-link {
+      color: var(--moss);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .mini-book {
+      min-width: 0;
+      padding: 10px;
+      border-radius: 15px;
+      transition: 160ms ease;
+    }
+
+    .mini-cover {
+      height: 128px;
+      margin-bottom: 11px;
+      padding: 14px;
+      border-radius: 5px 12px 12px 5px;
+      display: flex;
+      align-items: flex-end;
+      box-shadow: inset 6px 0 rgba(20,19,31,.1), 0 8px 20px rgba(20,19,31,.09);
+      color: var(--paper);
+      font-family: "Playfair Display", serif;
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 1.05;
+    }
+
+    .mini-book:nth-child(1) .mini-cover { background: var(--terracotta); }
+    .mini-book:nth-child(2) .mini-cover { background: var(--moss); }
+    .mini-book:nth-child(3) .mini-cover { color: var(--ink); background: var(--sage); }
+    .mini-book:nth-child(4) .mini-cover { background: #756f83; }
+
+    .mini-book h3 {
+      overflow: hidden;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: 12px;
+    }
+
+    .mini-book p {
+      margin: 0;
+      color: var(--stone);
+      font-size: 10px;
+    }
+
+    .rhythm {
+      padding: 26px;
+      min-height: 198px;
+    }
+
+    .rhythm-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+    }
+
+    .rhythm h2, .explore h2, .project-prompt h2 {
+      margin-bottom: 4px;
+      font-family: "Playfair Display", serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .rhythm p, .explore p, .project-prompt p {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .streak {
+      width: 68px;
+      height: 68px;
+      border: 7px solid var(--sage);
+      border-top-color: var(--terracotta);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--paper);
+    }
+
+    .streak strong {
+      font-family: "Playfair Display", serif;
+      font-size: 22px;
+    }
+
+    .week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .day {
+      text-align: center;
+      color: var(--stone);
+      font-size: 9px;
+    }
+
+    .day span {
+      display: block;
+      width: 27px;
+      height: 27px;
+      margin: 6px auto 0;
+      border-radius: 9px;
+      border: 1px solid rgba(20,19,31,.1);
+      background: rgba(255,255,255,.5);
+    }
+
+    .day.done span { background: var(--sage); border-color: var(--sage); }
+    .day.today span { background: var(--terracotta); border-color: var(--terracotta); }
+
+    .explore {
+      min-height: 246px;
+      padding: 27px;
+      color: var(--paper);
+      background: var(--moss);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .explore::after {
+      content: "“";
+      position: absolute;
+      right: 14px;
+      bottom: -76px;
+      color: rgba(255, 248, 235, .12);
+      font-family: "Playfair Display", serif;
+      font-size: 240px;
+    }
+
+    .explore .eyebrow { color: var(--sand); }
+    .explore p { width: 65%; color: rgba(255,248,235,.7); }
+
+    .quote {
+      width: 78%;
+      margin: 24px 0 0;
+      font-family: "Playfair Display", serif;
+      font-size: 20px;
+      font-style: italic;
+      line-height: 1.4;
+      position: relative;
+      z-index: 1;
+    }
+
+    .explore .text-link {
+      display: inline-block;
+      margin-top: 23px;
+      color: var(--cream);
+    }
+
+    .project-prompt {
+      min-height: 186px;
+      padding: 27px;
+      display: grid;
+      grid-template-columns: 1fr 118px;
+      align-items: center;
+      background: var(--cream);
+    }
+
+    .project-prompt p { max-width: 260px; }
+
+    .new-project {
+      width: 104px;
+      height: 104px;
+      border: 1px dashed rgba(20,19,31,.28);
+      border-radius: 24px;
+      background: rgba(255,255,255,.36);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .new-project b {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 25px;
+      font-weight: 400;
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .alternate-pane {
+      padding: 84px 0;
+      text-align: center;
+    }
+
+    .alternate-pane h2 {
+      font-family: "Playfair Display", serif;
+      font-size: 42px;
+      margin-bottom: 10px;
+    }
+
+    .alternate-pane p { color: var(--stone); }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">L</div>
+        Litology
+      </div>
+
+      <nav class="mode-switch" aria-label="Workspace">
+        <button class="mode active" data-tab="read">Read</button>
+        <button class="mode" data-tab="write">Write</button>
+        <button class="mode" data-tab="explore">Explore</button>
+      </nav>
+
+      <div class="tools">
+        <button class="icon-button" aria-label="Search">⌕</button>
+        <button class="icon-button" aria-label="Notifications">○</button>
+        <div class="avatar">BC</div>
+      </div>
+    </header>
+
+    <section class="tab-pane active" id="read">
+      <div class="hello">
+        <div>
+          <p class="eyebrow">Your literary life</p>
+          <h1>Good morning, Bernie. <em>Stay curious.</em></h1>
+        </div>
+        <div class="date-note">Saturday · a good day for chapter seven</div>
+      </div>
+
+      <div class="dashboard">
+        <div class="stack">
+          <article class="continue-card">
+            <div class="continue-copy">
+              <p class="eyebrow">Continue reading · 18 min left</p>
+              <h2>The Cartographer of Small Rooms</h2>
+              <p class="book-meta">Mara Venn · Chapter 7 of 11</p>
+              <div class="progress-head"><span>Your progress</span><span>62%</span></div>
+              <div class="progress"><span></span></div>
+              <button class="primary-action">Open book&nbsp; →</button>
+            </div>
+            <div class="book-stage">
+              <div class="cover">
+                <small>A novel by Mara Venn</small>
+                <strong>The Cartographer of Small Rooms</strong>
+                <div class="cover-line"></div>
+              </div>
+            </div>
+          </article>
+
+          <section class="panel shelf">
+            <div class="panel-title">
+              <h2>On your shelf</h2>
+              <span class="text-link">Open library →</span>
+            </div>
+            <div class="book-grid">
+              <article class="mini-book"><div class="mini-cover">Sea of Tranquility</div><h3>Sea of Tranquility</h3><p>Emily St. John Mandel</p></article>
+              <article class="mini-book"><div class="mini-cover">Braiding Sweetgrass</div><h3>Braiding Sweetgrass</h3><p>Robin Wall Kimmerer</p></article>
+              <article class="mini-book"><div class="mini-cover">The Left Hand of Darkness</div><h3>The Left Hand of Darkness</h3><p>Ursula K. Le Guin</p></article>
+              <article class="mini-book"><div class="mini-cover">The Book of Delights</div><h3>The Book of Delights</h3><p>Ross Gay</p></article>
+            </div>
+          </section>
+        </div>
+
+        <aside class="stack">
+          <section class="panel rhythm">
+            <div class="rhythm-top">
+              <div>
+                <p class="eyebrow">Your rhythm</p>
+                <h2>Five-day streak</h2>
+                <p>82 pages this week</p>
+              </div>
+              <div class="streak"><strong>5</strong></div>
+            </div>
+            <div class="week">
+              <div class="day done">M<span></span></div><div class="day done">T<span></span></div><div class="day done">W<span></span></div>
+              <div class="day done">T<span></span></div><div class="day today">F<span></span></div><div class="day">S<span></span></div><div class="day">S<span></span></div>
+            </div>
+          </section>
+
+          <section class="panel explore">
+            <p class="eyebrow">From Explore</p>
+            <h2>A quiet corner of the canon</h2>
+            <p>One uncommon book, surfaced because your shelf leans contemplative.</p>
+            <div class="quote">“Attention is the beginning of devotion.”</div>
+            <span class="text-link">Meet the book →</span>
+          </section>
+
+          <section class="panel project-prompt">
+            <div>
+              <p class="eyebrow">Write</p>
+              <h2>Your next idea belongs here.</h2>
+              <p>Switch to Write to shape a project from first note to final chapter.</p>
+            </div>
+            <div class="new-project"><span><b>＋</b>New project</span></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section class="tab-pane alternate-pane" id="write">
+      <p class="eyebrow">Write</p><h2>Turn a spark into a manuscript.</h2><p>Create a project, set a gentle goal, and keep every chapter close.</p>
+    </section>
+    <section class="tab-pane alternate-pane" id="explore">
+      <p class="eyebrow">Explore</p><h2>Find the book you didn’t know you needed.</h2><p>Browse finished works, uncommon voices, and thoughtful collections.</p>
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll(".mode").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".mode").forEach((item) => item.classList.toggle("active", item === button));
+        document.querySelectorAll(".tab-pane").forEach((pane) => pane.classList.toggle("active", pane.id === button.dataset.tab));
+      });
+    });
+  </script>
+</body>
+</html>

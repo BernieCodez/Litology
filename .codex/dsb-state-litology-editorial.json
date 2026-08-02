@@ -1,0 +1,44 @@
+{
+  "runId": "litology-editorial-2026-08-01",
+  "figmaFileKey": "ux7pbX2s4A6hekm4rhfiiZ",
+  "figmaFileUrl": "https://www.figma.com/design/ux7pbX2s4A6hekm4rhfiiZ",
+  "phase": "phase2",
+  "step": "blocked-by-figma-canvas-api-invalid-argument",
+  "entities": {
+    "collections": {
+      "primitives": "VariableCollectionId:3:2",
+      "color": "VariableCollectionId:3:3",
+      "layout": "VariableCollectionId:3:4",
+      "typography": "VariableCollectionId:3:5"
+    },
+    "variables": {
+      "primitiveCount": 8,
+      "semanticColorCount": 12,
+      "layoutCount": 10,
+      "typographyCount": 6
+    },
+    "pages": {
+      "Page 1": "0:1"
+    },
+    "styles": {
+      "textStyleCount": 8,
+      "effectStyleCount": 1,
+      "effect/editorial": "S:ea507ea6568af00ecf47d9f3c2bb1d1cfaf3c02a,"
+    },
+    "components": {},
+    "screens": {}
+  },
+  "fallbackArtifacts": {
+    "interactiveSource": "fontend/index.html",
+    "preview": "C:/Users/berni/.codex/visualizations/2026/08/01/019fbe02-467c-7143-843e-e595ea358e06/litology-dashboard.png",
+    "replacementFigmaFileKey": "JueYElsZx748hMXKJzaaWt"
+  },
+  "pendingValidations": [
+    "phase2:scene-node-creation",
+    "phase2:foundations-screenshot"
+  ],
+  "completedSteps": [
+    "phase0",
+    "phase1"
+  ]
+}

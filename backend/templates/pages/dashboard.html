@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your Litology reading, writing, and book discovery dashboard.">
+    <title>Dashboard · Litology</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=20260802">
+</head>
+<body>
+    <a class="skip-link" href="#dashboard-content">Skip to dashboard</a>
+
+    <header class="site-header">
+        <a class="brand" href="/dashboard" aria-label="Litology dashboard">
+            <span class="brand-mark" aria-hidden="true">L</span>
+            <span>Litology</span>
+        </a>
+
+        <nav class="mode-switcher" aria-label="Dashboard modes" role="tablist">
+            <button class="mode-button is-active" id="read-tab" type="button" role="tab"
+                    aria-selected="true" aria-controls="read-panel" data-mode="read">
+                <span class="mode-number">01</span> Read
+            </button>
+            <button class="mode-button" id="write-tab" type="button" role="tab"
+                    aria-selected="false" aria-controls="write-panel" data-mode="write" tabindex="-1">
+                <span class="mode-number">02</span> Write
+            </button>
+            <button class="mode-button" id="explore-tab" type="button" role="tab"
+                    aria-selected="false" aria-controls="explore-panel" data-mode="explore" tabindex="-1">
+                <span class="mode-number">03</span> Explore
+            </button>
+        </nav>
+
+        <div class="header-tools">
+            <button class="round-button notification-button" type="button" aria-label="Notifications">
+                <span aria-hidden="true"></span>
+            </button>
+            <button class="profile-button" type="button" aria-label="Open profile menu">
+                <span class="avatar">BC</span>
+                <span class="profile-copy"><strong>Bernie</strong><small>My account</small></span>
+                <span class="chevron" aria-hidden="true">⌄</span>
+            </button>
+        </div>
+    </header>
+
+    <main id="dashboard-content">
+        <section class="mode-panel is-active" id="read-panel" role="tabpanel" aria-labelledby="read-tab" data-panel="read">
+            <header class="page-intro">
+                <div>
+                    <p class="eyebrow">Sunday, August 2</p>
+                    <h1>Your reading room.</h1>
+                </div>
+                <p class="intro-note">Two worlds are waiting<br>for you to return.</p>
+            </header>
+
+            <div class="read-layout">
+                <article class="featured-book">
+                    <div class="featured-copy">
+                        <div class="status-row">
+                            <span class="status-pill status-rented">Rented</span>
+                            <span>12 days remaining</span>
+                        </div>
+                        <p class="section-kicker">Continue reading</p>
+                        <h2>The Cartographer<br>of Small Rooms</h2>
+                        <p class="byline">Mara Venn · Chapter 7 of 11</p>
+                        <div class="reading-progress">
+                            <div class="progress-label"><span>Your progress</span><strong>62%</strong></div>
+                            <div class="progress-track" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62">
+                                <span style="width: 62%"></span>
+                            </div>
+                        </div>
+                        <a class="button button-cream" href="/reader/1">Continue reading <span aria-hidden="true">→</span></a>
+                    </div>
+                    <div class="featured-art" aria-hidden="true">
+                        <div class="orbit orbit-one"></div>
+                        <div class="orbit orbit-two"></div>
+                        <div class="book book-feature">
+                            <span>A novel by Mara Venn</span>
+                            <strong>The Cartographer of Small Rooms</strong>
+                            <i></i>
+                        </div>
+                    </div>
+                </article>
+
+                <aside class="review-card">
+                    <div class="review-topline">
+                        <span class="status-pill status-reviewing">Reviewing</span>
+                        <span>Draft saved</span>
+                    </div>
+                    <div class="book book-review" aria-hidden="true">
+                        <span>Essays</span>
+                        <strong>The Quiet Between Ideas</strong>
+                    </div>
+                    <div>
+                        <p class="section-kicker">Your review</p>
+                        <h2>The Quiet Between Ideas</h2>
+                        <p>You’re almost there. Add a final thought before sharing it with the community.</p>
+                        <a class="text-link" href="/reviews/2">Finish your review <span aria-hidden="true">→</span></a>
+                    </div>
+                </aside>
+            </div>
+
+            <section class="collection-section" aria-labelledby="current-books-title">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Your collection</p>
+                        <h2 id="current-books-title">Current books</h2>
+                    </div>
+                    <div class="filter-chips" aria-label="Filter current books">
+                        <button class="filter-chip is-active" type="button" data-book-filter="all">All <span>4</span></button>
+                        <button class="filter-chip" type="button" data-book-filter="rented">Rented <span>3</span></button>
+                        <button class="filter-chip" type="button" data-book-filter="reviewing">Reviewing <span>1</span></button>
+                    </div>
+                </div>
+
+                <div class="book-shelf" data-book-list>
+                    <a class="shelf-book" href="/reader/1" data-book-status="rented">
+                        <div class="book book-sea"><span>A novel</span><strong>Sea of<br>Tranquility</strong><i></i></div>
+                        <div class="shelf-book-copy"><h3>Sea of Tranquility</h3><p>Emily St. John Mandel</p><span>41% read</span></div>
+                    </a>
+                    <a class="shelf-book" href="/reader/2" data-book-status="rented">
+                        <div class="book book-sweetgrass"><span>Milkweed Editions</span><strong>Braiding<br>Sweetgrass</strong><i></i></div>
+                        <div class="shelf-book-copy"><h3>Braiding Sweetgrass</h3><p>Robin Wall Kimmerer</p><span>8 days left</span></div>
+                    </a>
+                    <a class="shelf-book" href="/reviews/2" data-book-status="reviewing">
+                        <div class="book book-ideas"><span>Essays</span><strong>The Quiet<br>Between Ideas</strong><i></i></div>
+                        <div class="shelf-book-copy"><h3>The Quiet Between Ideas</h3><p>Noor Bell</p><span>Reviewing</span></div>
+                    </a>
+                    <a class="shelf-book" href="/reader/4" data-book-status="rented">
+                        <div class="book book-darkness"><span>Ursula K. Le Guin</span><strong>The Left Hand<br>of Darkness</strong><i></i></div>
+                        <div class="shelf-book-copy"><h3>The Left Hand of Darkness</h3><p>Ursula K. Le Guin</p><span>19 days left</span></div>
+                    </a>
+                </div>
+
+                <div class="empty-state" data-books-empty hidden>
+                    <div class="empty-books" aria-hidden="true"><span></span><span></span><span></span></div>
+                    <p class="eyebrow">Your shelf is ready</p>
+                    <h2>No current books.</h2>
+                    <p>There are more stories than there are hours in the day. Let’s find your next one.</p>
+                    <button class="button button-dark" type="button" data-switch-mode="explore">Explore books <span aria-hidden="true">→</span></button>
+                </div>
+            </section>
+        </section>
+
+        <section class="mode-panel" id="write-panel" role="tabpanel" aria-labelledby="write-tab" data-panel="write" hidden>
+            <header class="page-intro write-intro">
+                <div>
+                    <p class="eyebrow">Your writing desk</p>
+                    <h1>Make room for<br><em>the unfinished.</em></h1>
+                </div>
+                <button class="button button-dark" type="button" data-open-create>
+                    <span class="plus" aria-hidden="true">＋</span> Create new project
+                </button>
+            </header>
+
+            <section class="series-section" aria-labelledby="series-title">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Series · 2 projects</p>
+                        <h2 id="series-title">The Alder House Chronicles</h2>
+                    </div>
+                    <button class="quiet-button" type="button" aria-label="More options for The Alder House Chronicles">•••</button>
+                </div>
+
+                <div class="series-card">
+                    <a class="project-card project-featured" href="/editor/101">
+                        <div class="project-document project-document-dark" aria-hidden="true">
+                            <span>Book one</span><strong>The House<br>That Kept<br>the Rain</strong><i></i>
+                        </div>
+                        <div class="project-copy">
+                            <div class="project-meta"><span class="type-pill">Novel</span><span>Edited yesterday</span></div>
+                            <h3>The House That Kept the Rain</h3>
+                            <p>A family returns to the house they swore they would never enter again.</p>
+                            <div class="word-progress">
+                                <span><i style="width: 72%"></i></span>
+                                <small>58,240 of 80,000 words</small>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a class="project-card project-featured" href="/editor/102">
+                        <div class="project-document project-document-sage" aria-hidden="true">
+                            <span>Book two</span><strong>The Orchard<br>at Dusk</strong><i></i>
+                        </div>
+                        <div class="project-copy">
+                            <div class="project-meta"><span class="type-pill">Novel</span><span>Edited 6 days ago</span></div>
+                            <h3>The Orchard at Dusk</h3>
+                            <p>Notes, character sketches, and a promising first chapter.</p>
+                            <div class="word-progress">
+                                <span><i style="width: 18%"></i></span>
+                                <small>14,510 of 80,000 words</small>
+                            </div>
+                        </div>
+                    </a>
+
+                    <button class="add-to-series" type="button" data-open-create>
+                        <span aria-hidden="true">＋</span>
+                        <strong>Add to series</strong>
+                        <small>Start the next story</small>
+                    </button>
+                </div>
+            </section>
+
+            <section class="loose-projects" aria-labelledby="projects-title">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Independent work</p>
+                        <h2 id="projects-title">Other projects</h2>
+                    </div>
+                    <button class="sort-button" type="button">Last edited <span aria-hidden="true">⌄</span></button>
+                </div>
+                <div class="project-grid">
+                    <a class="compact-project" href="/editor/201">
+                        <span class="project-icon project-icon-poem" aria-hidden="true">¶</span>
+                        <span class="project-meta"><span class="type-pill">Poetry</span><span>Today</span></span>
+                        <h3>Things the Morning Kept</h3>
+                        <p>23 poems · 6,402 words</p>
+                    </a>
+                    <a class="compact-project" href="/editor/202">
+                        <span class="project-icon project-icon-essay" aria-hidden="true">A</span>
+                        <span class="project-meta"><span class="type-pill">Research essay</span><span>Jul 28</span></span>
+                        <h3>Memory, Maps &amp; Meaning</h3>
+                        <p>Outline · 18 sources</p>
+                    </a>
+                    <button class="compact-project blank-project" type="button" data-open-create>
+                        <span class="blank-plus" aria-hidden="true">＋</span>
+                        <h3>Begin something new</h3>
+                        <p>Blank page or guided template</p>
+                    </button>
+                </div>
+            </section>
+        </section>
+
+        <section class="mode-panel" id="explore-panel" role="tabpanel" aria-labelledby="explore-tab" data-panel="explore" hidden>
+            <section class="explore-hero">
+                <div class="explore-hero-copy">
+                    <p class="eyebrow">The world’s shelf</p>
+                    <h1>Find the book you<br><em>didn’t know you needed.</em></h1>
+                    <p>Search the Litology index to rent your next read, or wander through a collection made for you.</p>
+                    <form class="search-form" role="search" data-search-form>
+                        <span class="search-icon" aria-hidden="true"></span>
+                        <label class="sr-only" for="book-search">Search books, authors, or genres</label>
+                        <input id="book-search" type="search" placeholder="Search by title, author, or genre…" autocomplete="off" data-search-input>
+                        <button type="submit">Search</button>
+                    </form>
+                    <div class="popular-searches">
+                        <span>Try</span>
+                        <button type="button" data-search-suggestion="speculative fiction">Speculative fiction</button>
+                        <button type="button" data-search-suggestion="poetry">Poetry</button>
+                        <button type="button" data-search-suggestion="nature">Nature writing</button>
+                    </div>
+                </div>
+                <div class="explore-still-life" aria-hidden="true">
+                    <div class="sun"></div>
+                    <div class="book book-standing standing-one"><strong>THE<br>WAVES</strong></div>
+                    <div class="book book-standing standing-two"><strong>ESSAYS</strong></div>
+                    <div class="book book-standing standing-three"><strong>POEMS</strong></div>
+                    <div class="vase"><span></span><i></i><b></b></div>
+                </div>
+            </section>
+
+            <section class="recommendations" data-recommendations aria-labelledby="recommended-title">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Selected for your shelf</p>
+                        <h2 id="recommended-title">Because you linger over language</h2>
+                    </div>
+                    <div class="scroll-buttons">
+                        <button type="button" aria-label="Scroll recommendations left" data-scroll="left">←</button>
+                        <button type="button" aria-label="Scroll recommendations right" data-scroll="right">→</button>
+                    </div>
+                </div>
+
+                <div class="recommendation-rail" data-recommendation-rail>
+                    <article class="recommendation-card" data-search-terms="the book of delights ross gay essays poetry">
+                        <div class="book book-delights"><span>Ross Gay</span><strong>The Book<br>of Delights</strong><i></i></div>
+                        <div class="recommendation-copy"><span class="match">96% match</span><h3>The Book of Delights</h3><p>Ross Gay</p><div><strong>$3.80</strong><span> / 21 days</span></div><button type="button" class="rent-button">View book</button></div>
+                    </article>
+                    <article class="recommendation-card" data-search-terms="the overstory richard powers novel fiction nature">
+                        <div class="book book-overstory"><span>Richard Powers</span><strong>The<br>Overstory</strong><i></i></div>
+                        <div class="recommendation-copy"><span class="match">93% match</span><h3>The Overstory</h3><p>Richard Powers</p><div><strong>$4.20</strong><span> / 21 days</span></div><button type="button" class="rent-button">View book</button></div>
+                    </article>
+                    <article class="recommendation-card" data-search-terms="a field guide to getting lost rebecca solnit essays nature">
+                        <div class="book book-field-guide"><span>Rebecca Solnit</span><strong>A Field Guide<br>to Getting Lost</strong><i></i></div>
+                        <div class="recommendation-copy"><span class="match">91% match</span><h3>A Field Guide to Getting Lost</h3><p>Rebecca Solnit</p><div><strong>$3.60</strong><span> / 21 days</span></div><button type="button" class="rent-button">View book</button></div>
+                    </article>
+                    <article class="recommendation-card" data-search-terms="devotions mary oliver poetry poems nature">
+                        <div class="book book-devotions"><span>Mary Oliver</span><strong>Devotions</strong><i></i></div>
+                        <div class="recommendation-copy"><span class="match">89% match</span><h3>Devotions</h3><p>Mary Oliver</p><div><strong>$3.20</strong><span> / 21 days</span></div><button type="button" class="rent-button">View book</button></div>
+                    </article>
+                    <article class="recommendation-card" data-search-terms="the dispossessed ursula le guin science fiction speculative fiction">
+                        <div class="book book-dispossessed"><span>Ursula K. Le Guin</span><strong>The<br>Dispossessed</strong><i></i></div>
+                        <div class="recommendation-copy"><span class="match">87% match</span><h3>The Dispossessed</h3><p>Ursula K. Le Guin</p><div><strong>$4.00</strong><span> / 21 days</span></div><button type="button" class="rent-button">View book</button></div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="search-results" data-search-results hidden aria-live="polite">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Litology index</p>
+                        <h2>Search results for “<span data-query-label></span>”</h2>
+                    </div>
+                    <button class="text-button" type="button" data-clear-search>Clear search</button>
+                </div>
+                <p class="results-count" data-results-count></p>
+                <div class="results-grid" data-results-grid></div>
+                <div class="no-results" data-no-results hidden>
+                    <h3>No books found on this shelf.</h3>
+                    <p>Try a different title, author, or genre.</p>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <dialog class="create-dialog" data-create-dialog aria-labelledby="create-title">
+        <form method="dialog">
+            <div class="dialog-heading">
+                <div><p class="eyebrow">New project</p><h2 id="create-title">What are you making?</h2></div>
+                <button class="dialog-close" value="cancel" aria-label="Close create project dialog">×</button>
+            </div>
+            <p class="dialog-intro">Begin with a clean page, or choose a little structure to help you get moving.</p>
+            <div class="template-grid">
+                <button type="button" data-template="blank"><span>＋</span><strong>Blank project</strong><small>Start from an empty page</small></button>
+                <button type="button" data-template="novel"><span>Ab</span><strong>Novel</strong><small>Chapters, characters &amp; plot</small></button>
+                <button type="button" data-template="poetry"><span>¶</span><strong>Poetry collection</strong><small>Group and order poems</small></button>
+                <button type="button" data-template="essay"><span>A</span><strong>Research essay</strong><small>Outline, notes &amp; sources</small></button>
+            </div>
+            <p class="template-note" data-template-note aria-live="polite"></p>
+        </form>
+    </dialog>
+
+    <div class="toast" role="status" aria-live="polite" data-toast></div>
+</body>
+</html>
