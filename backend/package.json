@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "build:spellcheck": "esbuild ./static/js/english-spellchecker.entry.mjs --bundle --format=esm --platform=browser --loader:.aff=text --loader:.dic=text --legal-comments=eof --minify --outfile=./static/js/english-spellchecker.bundle.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.29.2",
+    "@tiptap/starter-kit": "^3.29.2"
+  },
+  "devDependencies": {
+    "dictionary-en": "^4.0.0",
+    "esbuild": "^0.28.1",
+    "nspell": "^2.1.5"
+  }
+}

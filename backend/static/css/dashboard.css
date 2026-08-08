@@ -1,6 +1,7 @@
 :root {
     --ink: #14131f;
-    --stone: #8a8685;
+    --stone: #625f64;
+    --border-stone: #8a8685;
     --paper: #fff8eb;
     --cream: #ffeccc;
     --sand: #f2d0a4;
@@ -8,8 +9,10 @@
     --moss: #536b45;
     --sage: #c8d6af;
     --white: #fffdf7;
-    --line: rgba(20, 19, 31, 0.12);
-    --soft-line: rgba(20, 19, 31, 0.075);
+    --surface: #fffdf8;
+    --cream-soft: #fff3de;
+    --line: rgba(138, 134, 133, 0.28);
+    --soft-line: rgba(138, 134, 133, 0.16);
     --shadow: 0 24px 70px rgba(20, 19, 31, 0.12);
     --font-display: "Playfair Display", Georgia, serif;
     --font-sans: "Inter", Arial, sans-serif;
@@ -29,8 +32,8 @@ body {
     margin: 0;
     color: var(--ink);
     background:
-        radial-gradient(circle at 5% 0, rgba(242, 208, 164, 0.42), transparent 24rem),
-        radial-gradient(circle at 96% 3%, rgba(200, 214, 175, 0.45), transparent 25rem),
+        radial-gradient(circle at 5% 0, rgba(242, 208, 164, 0.25), transparent 24rem),
+        radial-gradient(circle at 96% 3%, rgba(200, 214, 175, 0.28), transparent 25rem),
         var(--paper);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -52,6 +55,19 @@ body::before {
 button,
 input {
     font: inherit;
+}
+
+input[type="search"] {
+    margin: 0;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+    display: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 button,
@@ -1154,6 +1170,8 @@ h1 em {
 }
 
 .search-form {
+    width: 100%;
+    min-width: 0;
     max-width: 720px;
     height: 58px;
     padding: 6px 6px 6px 21px;
@@ -1167,7 +1185,15 @@ h1 em {
     box-shadow: 0 16px 35px rgba(20, 19, 31, 0.19);
 }
 
+.search-form:focus-within {
+    border-color: var(--terracotta);
+    box-shadow:
+        0 0 0 3px rgba(217, 130, 91, 0.22),
+        0 16px 35px rgba(20, 19, 31, 0.19);
+}
+
 .search-icon {
+    flex: 0 0 auto;
     width: 14px;
     height: 14px;
     border: 1.7px solid var(--ink);
@@ -1187,17 +1213,26 @@ h1 em {
 }
 
 .search-form input {
+    width: 100%;
     min-width: 0;
     height: 100%;
+    margin: 0;
+    padding: 0;
     border: 0;
+    border-radius: 0;
     outline: 0;
+    -webkit-appearance: none;
+    appearance: none;
     color: var(--ink);
     background: transparent;
+    box-shadow: none;
     font-size: 12px;
+    line-height: normal;
 }
 
 .search-form input::placeholder {
     color: var(--stone);
+    opacity: 1;
 }
 
 .search-form button {
@@ -1593,7 +1628,7 @@ h1 em {
 
 .template-grid button:hover {
     border-color: var(--terracotta);
-    background: var(--cream);
+    background: var(--cream-soft);
 }
 
 .template-grid button > span {

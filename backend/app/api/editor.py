@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 router = APIRouter(
-    prefix="/editor",
+    prefix="/api/editor",
     tags=["Editor"]
 )
 
@@ -16,6 +16,7 @@ def open_editor(project_id: int):
             "plot",
             "characters",
             "settings",
-            "timeline"
+            "timeline",
+            "miscellaneous"
         ]
     }

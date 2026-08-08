@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Litology manuscript editor">
+    <title>{{ project_name }} · Litology</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/editor.css?v=20260808-10">
+</head>
+<body data-project-id="{{ project_id }}" data-chapter-number="1">
+    <a class="skip-link" href="#writing-area">Skip to editor</a>
+
+    <header class="editor-header">
+        <div class="project-identity">
+            <a class="brand-mark" href="/dashboard" aria-label="Back to Litology dashboard">L</a>
+            <span class="breadcrumb" aria-hidden="true">/</span>
+            <div class="project-title" data-project-title>
+                <span>{{ project_type }}</span>
+                <div class="project-title-display" data-project-title-display>
+                    <button class="project-name-button" type="button" data-project-name
+                            aria-label="Rename {{ project_name }}">{{ project_name }}</button>
+                    <button class="rename-project-button" type="button" data-start-rename
+                            aria-label="Rename project" title="Rename project">✎</button>
+                </div>
+                <form class="project-rename-form" data-project-rename-form hidden>
+                    <label class="sr-only" for="project-name-input">Project name</label>
+                    <input id="project-name-input" name="project-name" type="text" maxlength="80"
+                           value="{{ project_name }}" autocomplete="off" required data-project-name-input>
+                    <button class="rename-confirm-button" type="submit">Save</button>
+                    <button class="rename-cancel-button" type="button" aria-label="Cancel rename"
+                            data-cancel-rename>×</button>
+                </form>
+            </div>
+            <button class="icon-button project-menu" type="button" aria-label="Project options">•••</button>
+        </div>
+
+        <div class="save-state" id="save-state" data-state="saved" role="status" aria-live="polite">
+            <span aria-hidden="true"></span>
+            <span class="save-state-label" data-save-state-label>Saved</span>
+        </div>
+
+        <div class="header-actions">
+            <button class="header-settings-button" type="button" data-book-only data-open-chapter-customizer
+                    aria-label="Edit chapter template" title="Edit chapter template">
+                <i class="fa-solid fa-file-pen" aria-hidden="true"></i>
+                <span>Edit chapter template</span>
+            </button>
+            <button class="secondary-button" type="button">
+                <span aria-hidden="true">↶</span> Version history
+            </button>
+            <button class="share-button" type="button">
+                <span aria-hidden="true">↗</span> Share
+            </button>
+            <button class="profile-button" type="button" aria-label="Open profile menu">BC</button>
+        </div>
+    </header>
+
+    <div class="editor-workspace">
+        <aside class="left-sidebar" aria-label="Project navigation">
+            <header class="sidebar-header">
+                <div>
+                    <span class="eyebrow">Workspace</span>
+                    <h1>Contents</h1>
+                </div>
+                <button class="icon-button" type="button" aria-label="Collapse project navigation">‹</button>
+            </header>
+
+            <nav class="section-navigation" aria-label="Editor sections">
+                <button class="section-button is-active" type="button" aria-current="page" data-section="book">
+                    <span class="section-icon book-icon" aria-hidden="true"></span>
+                    <span>Book</span>
+                    <span class="section-chevron" aria-hidden="true">⌄</span>
+                </button>
+
+                <div class="chapter-navigation" data-chapter-navigation aria-label="Book chapters"></div>
+
+                <button class="section-button" type="button" data-section="plot">
+                    <span class="section-icon plot-icon" aria-hidden="true"></span>
+                    <span>Plot</span>
+                </button>
+                <button class="section-button" type="button" data-section="characters">
+                    <span class="section-icon characters-icon" aria-hidden="true"></span>
+                    <span>Characters</span>
+                </button>
+                <button class="section-button" type="button" data-section="settings">
+                    <span class="section-icon settings-icon" aria-hidden="true"></span>
+                    <span>Settings</span>
+                </button>
+                <button class="section-button" type="button" data-section="timeline">
+                    <span class="section-icon timeline-icon" aria-hidden="true"></span>
+                    <span>Timeline</span>
+                </button>
+                <button class="section-button" type="button" data-section="miscellaneous">
+                    <span class="section-icon miscellaneous-icon" aria-hidden="true">✦</span>
+                    <span>Miscellaneous</span>
+                </button>
+            </nav>
+
+            <button class="add-section-button" type="button">
+                <span aria-hidden="true">＋</span>
+                Add section
+            </button>
+
+            <footer class="sidebar-footer">
+                <div class="goal-ring"><span>0%</span></div>
+                <div>
+                    <strong>0 words</strong>
+                    <span>No writing goal set</span>
+                </div>
+                <button class="icon-button" type="button" aria-label="Set a writing goal">＋</button>
+            </footer>
+        </aside>
+
+        <main class="editor-main" id="writing-area">
+            <div class="format-toolbar" aria-label="Text formatting toolbar" data-book-only>
+                <div class="template-toolbar-actions" data-template-toolbar-actions hidden>
+                    <button class="toolbar-text-button" type="button" data-close-chapter-customizer>
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to book
+                    </button>
+                    <button class="toolbar-template-save" type="button" data-apply-chapter-template>
+                        <i class="fa-solid fa-check" aria-hidden="true"></i> Save template
+                    </button>
+                    <button class="toolbar-text-button" type="button" data-reset-chapter-template>
+                        Start blank
+                    </button>
+                    <span class="toolbar-divider" aria-hidden="true"></span>
+                </div>
+
+                <div class="tool-group">
+                    <label class="toolbar-select-control block-style-control" title="Paragraph style">
+                        <i class="fa-solid fa-paragraph" aria-hidden="true"></i>
+                        <select class="select-tool block-style-select" aria-label="Paragraph style" data-block-style>
+                            <option value="h1">H1</option>
+                            <option value="h2">H2</option>
+                            <option value="h3">H3</option>
+                            <option value="h4">H4</option>
+                            <option value="normal">Normal</option>
+                        </select>
+                    </label>
+                </div>
+
+                <span class="toolbar-divider"></span>
+
+                <div class="tool-group">
+                    <label class="toolbar-select-control font-control" title="Font family">
+                        <i class="fa-solid fa-font" aria-hidden="true"></i>
+                        <select class="select-tool font-select" aria-label="Font family" data-font-family>
+                            <option value="Playfair Display">Playfair Display</option>
+                            <option value="Inter">Inter</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Courier New">Courier New</option>
+                            <option value="__google_fonts__" data-action="font-library">＋ Import font…</option>
+                        </select>
+                    </label>
+                    <div class="font-size-picker" data-font-size-picker>
+                        <button class="font-size-step" type="button" aria-label="Decrease font size"
+                                title="Decrease font size" data-font-size-decrease>
+                            <i class="fa-solid fa-minus" aria-hidden="true"></i>
+                        </button>
+                        <input class="font-size-input" id="font-size-input" type="text" value="12"
+                               inputmode="decimal" autocomplete="off" spellcheck="false"
+                               role="combobox" aria-label="Font size" aria-haspopup="listbox"
+                               aria-controls="font-size-menu" aria-expanded="false"
+                               aria-autocomplete="list" data-font-size-input>
+                        <button class="font-size-step" type="button" aria-label="Increase font size"
+                                title="Increase font size" data-font-size-increase>
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <span class="toolbar-divider"></span>
+
+                <div class="tool-group">
+                    <button class="format-button history-button" type="button" aria-label="Undo" title="Undo" data-command="undo"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+                    <button class="format-button history-button" type="button" aria-label="Redo" title="Redo" data-command="redo"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+                </div>
+
+                <span class="toolbar-divider"></span>
+
+                <div class="tool-group">
+                    <button class="format-button" type="button" aria-label="Bold" title="Bold" data-command="bold"><i class="fa-solid fa-bold" aria-hidden="true"></i></button>
+                    <button class="format-button" type="button" aria-label="Italic" title="Italic" data-command="italic"><i class="fa-solid fa-italic" aria-hidden="true"></i></button>
+                    <button class="format-button" type="button" aria-label="Underline" title="Underline" data-command="underline"><i class="fa-solid fa-underline" aria-hidden="true"></i></button>
+                    <button class="format-button" type="button" aria-label="Strikethrough" title="Strikethrough" data-command="strikethrough"><i class="fa-solid fa-strikethrough" aria-hidden="true"></i></button>
+                    <span class="toolbar-color-picker" data-color-picker data-color-picker-label="Font color">
+                        <button class="format-button color-button" type="button" aria-label="Font color" title="Font color" data-color-picker-trigger>
+                            <i class="fa-solid fa-palette" aria-hidden="true"></i><span data-font-color-swatch data-color-swatch></span>
+                        </button>
+                        <input type="hidden" value="#14131f" data-color-value data-font-color>
+                    </span>
+                    <span class="toolbar-color-picker" data-color-picker data-color-picker-label="Highlight color">
+                        <button class="format-button highlight-button" type="button" aria-label="Highlight color" title="Highlight color" data-color-picker-trigger>
+                            <i class="fa-solid fa-highlighter" aria-hidden="true"></i><span data-highlight-swatch data-color-swatch></span>
+                        </button>
+                        <input type="hidden" value="#f2d0a4" data-color-value data-highlight-color>
+                    </span>
+                </div>
+
+                <span class="toolbar-divider"></span>
+
+                <div class="tool-group">
+                    <label class="toolbar-select-control alignment-control" title="Alignment and indentation">
+                        <i class="fa-solid fa-align-left" aria-hidden="true" data-alignment-icon></i>
+                        <select class="select-tool alignment-select" aria-label="Alignment and indentation"
+                                data-alignment-menu>
+                            <option value="left">Align left</option>
+                            <option value="center">Align center</option>
+                            <option value="right">Align right</option>
+                            <option value="justify">Justify</option>
+                            <option value="decrease-indent" data-action="decrease-indent">← Decrease indent</option>
+                            <option value="increase-indent" data-action="increase-indent">→ Increase indent</option>
+                        </select>
+                    </label>
+                    <label class="toolbar-select-control line-height-control" title="Line spacing">
+                        <i class="fa-solid fa-arrows-up-down" aria-hidden="true"></i>
+                        <select class="select-tool line-height-select" aria-label="Line spacing" data-line-height>
+                            <option value="">Spacing</option>
+                            <option value="1">1.0</option>
+                            <option value="1.15">1.15</option>
+                            <option value="1.5">1.5</option>
+                            <option value="1.86">1.86</option>
+                            <option value="2">2.0</option>
+                        </select>
+                    </label>
+                    <button class="format-button list-button" type="button" aria-label="Bulleted list" title="Bulleted list" data-command="bulletList"><i class="fa-solid fa-list-ul" aria-hidden="true"></i></button>
+                    <button class="format-button list-button" type="button" aria-label="Numbered list" title="Numbered list" data-command="orderedList"><i class="fa-solid fa-list-ol" aria-hidden="true"></i></button>
+                </div>
+
+                <div class="toolbar-spacer"></div>
+
+                <button class="toolbar-text-button" type="button">
+                    <i class="fa-solid fa-calculator" aria-hidden="true"></i> Word count
+                </button>
+            </div>
+
+            <section class="document-scroll chapter-template-page" data-chapter-customizer hidden
+                     aria-labelledby="chapter-template-heading">
+                <h2 class="sr-only" id="chapter-template-heading">Edit chapter template</h2>
+                <p class="sr-only" id="chapter-variable-help">
+                    Type @ in the editor to insert the chapter number variable.
+                </p>
+                <div class="chapter-stack">
+                    <article class="chapter-section chapter-template-preview" data-chapter-template-preview>
+                        <div class="chapter-editor" data-chapter-template-editor></div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="document-scroll" data-book-scroll data-book-only aria-label="Manuscript chapters">
+                <div class="chapter-stack" data-chapter-stack>
+                    <div class="chapter-loading" data-chapter-loading>Opening your manuscript…</div>
+                </div>
+            </section>
+
+            <footer class="status-bar" data-book-only>
+                <div class="status-group">
+                    <span>0 words</span>
+                    <i></i>
+                    <span>0 characters</span>
+                    <i></i>
+                    <span>0 min read</span>
+                </div>
+                <div class="status-group">
+                    <button type="button">Focus mode</button>
+                    <i></i>
+                    <button type="button">100% <span aria-hidden="true">⌄</span></button>
+                </div>
+            </footer>
+
+            <div class="workspace-pages" data-workspace-pages hidden>
+                <section class="workspace-page plot-page" data-workspace-page="plot" hidden>
+                    <header class="workspace-page-header">
+                        <div>
+                            <span class="eyebrow">Story architecture</span>
+                            <h2>Plot</h2>
+                            <p>Shape the story in brief beats before you write the full scenes.</p>
+                        </div>
+                        <button class="primary-workspace-button" type="button" data-add-plot>
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i> Add plot point
+                        </button>
+                    </header>
+                    <div class="workspace-tabs" role="tablist" aria-label="Plot views">
+                        <button class="is-active" type="button" role="tab" aria-selected="true" data-plot-tab="chapters">Chapter summaries</button>
+                        <button type="button" role="tab" aria-selected="false" data-plot-tab="outline">Story outline</button>
+                        <button type="button" role="tab" aria-selected="false" data-plot-tab="arcs">Story arcs</button>
+                    </div>
+                    <div class="workspace-scroll">
+                        <div class="plot-overview">
+                            <div><span data-plot-count>0</span><small>plot points</small></div>
+                            <div><span data-scheduled-count>0</span><small>scheduled</small></div>
+                            <p>Keep each summary to a few sentences. Full prose belongs in Book.</p>
+                        </div>
+                        <div class="card-grid plot-card-grid" data-plot-list></div>
+                    </div>
+                </section>
+
+                <section class="workspace-page characters-page" data-workspace-page="characters" hidden>
+                    <header class="workspace-page-header">
+                        <div>
+                            <span class="eyebrow">Cast</span>
+                            <h2>Characters</h2>
+                            <p>Keep every voice, relationship, and telling detail consistent.</p>
+                        </div>
+                        <button class="primary-workspace-button" type="button" data-add-character>
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i> New character
+                        </button>
+                    </header>
+                    <div class="workspace-scroll character-layout">
+                        <aside class="record-rail">
+                            <label class="workspace-search">
+                                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                                <span class="sr-only">Search characters</span>
+                                <input type="search" placeholder="Search characters" data-character-search>
+                            </label>
+                            <div class="record-list" data-character-list></div>
+                        </aside>
+                        <div class="record-detail" data-character-detail></div>
+                    </div>
+                </section>
+
+                <section class="workspace-page settings-page" data-workspace-page="settings" hidden>
+                    <header class="workspace-page-header">
+                        <div>
+                            <span class="eyebrow">Places &amp; worldbuilding</span>
+                            <h2>Settings</h2>
+                            <p>Build vivid locations and chart how your cast moves between them.</p>
+                        </div>
+                        <button class="primary-workspace-button" type="button" data-add-location>
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i> New location
+                        </button>
+                    </header>
+                    <div class="workspace-scroll settings-scroll">
+                        <section class="world-map-panel">
+                            <div class="section-heading-row">
+                                <div>
+                                    <span class="eyebrow">Travel board</span>
+                                    <h3>World map</h3>
+                                </div>
+                                <span class="map-legend"><i></i> Story location</span>
+                            </div>
+                            <div class="world-map" data-world-map aria-label="Map of story locations">
+                                <svg viewBox="0 0 1000 430" role="img" aria-label="Stylized world map">
+                                    <path d="M78 91l80-48 92 13 58 46-27 49-60 17-27 70-51 18-28-50-50-28z" />
+                                    <path d="M252 250l64 18 42 78-43 76-51-63-19-61z" />
+                                    <path d="M423 89l68-39 71 18 28 41-59 19-28 33-66-10-36-30z" />
+                                    <path d="M480 173l79-18 53 47-26 100-48 86-47-42-17-104z" />
+                                    <path d="M572 86l134-46 140 26 89 62-57 42-93-13-55 52-94-23-51-55z" />
+                                    <path d="M797 287l78-32 76 47-31 64-83 8-53-42z" />
+                                </svg>
+                                <div class="map-pins" data-map-pins></div>
+                                <div class="map-empty" data-map-empty>Add a location and place it on your travel board.</div>
+                            </div>
+                        </section>
+                        <section class="location-workbench">
+                            <div class="location-column">
+                                <div class="section-heading-row">
+                                    <div><span class="eyebrow">World bible</span><h3>Locations</h3></div>
+                                </div>
+                                <div class="location-list" data-location-list></div>
+                            </div>
+                            <div class="inspiration-column">
+                                <div class="section-heading-row">
+                                    <div><span class="eyebrow">Reference search</span><h3>Place inspiration</h3></div>
+                                </div>
+                                <form class="place-search-form" data-place-search-form>
+                                    <label class="workspace-search">
+                                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                                        <span class="sr-only">Search place images</span>
+                                        <input type="search" required placeholder="Try Kyoto alley or Scottish coast" data-place-search>
+                                    </label>
+                                    <button type="submit">Search</button>
+                                </form>
+                                <p class="image-search-note">Reference images from Wikimedia Commons.</p>
+                                <div class="inspiration-grid" data-inspiration-grid>
+                                    <div class="workspace-empty compact"><i class="fa-regular fa-images"></i><p>Search a real place to gather visual references.</p></div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <section class="workspace-page timeline-page" data-workspace-page="timeline" hidden>
+                    <header class="workspace-page-header">
+                        <div>
+                            <span class="eyebrow">Story chronology</span>
+                            <h2>Timeline</h2>
+                            <p>Dates and times assigned in Plot appear here automatically.</p>
+                        </div>
+                        <div class="segmented-control" role="group" aria-label="Timeline view">
+                            <button class="is-active" type="button" data-timeline-view="line"><i class="fa-solid fa-timeline"></i> Line</button>
+                            <button type="button" data-timeline-view="calendar"><i class="fa-regular fa-calendar"></i> Calendar</button>
+                        </div>
+                    </header>
+                    <div class="workspace-scroll timeline-scroll">
+                        <div data-timeline-content></div>
+                    </div>
+                </section>
+
+                <section class="workspace-page misc-page" data-workspace-page="miscellaneous" hidden>
+                    <header class="workspace-page-header">
+                        <div>
+                            <span class="eyebrow">Open notebook</span>
+                            <h2>Miscellaneous</h2>
+                            <p>A quiet place for fragments, research, and anything that does not fit elsewhere.</p>
+                        </div>
+                        <span class="notepad-save-state" data-notepad-state><i></i> Saved</span>
+                    </header>
+                    <div class="workspace-scroll notepad-wrap">
+                        <label class="sr-only" for="misc-notepad">Miscellaneous notes</label>
+                        <textarea id="misc-notepad" class="misc-notepad" spellcheck="true"
+                                  placeholder="Start writing anything…" data-misc-notepad></textarea>
+                        <div class="notepad-meta"><span data-notepad-words>0 words</span><span>Saved to this project</span></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <aside class="right-sidebar" aria-label="Athena writing assistant">
+            <header class="athena-header">
+                <div class="athena-identity">
+                    <span class="athena-mark" aria-hidden="true">✦</span>
+                    <div>
+                        <span class="eyebrow">Writing companion</span>
+                        <h2>Athena</h2>
+                    </div>
+                </div>
+                <button class="icon-button" type="button" aria-label="Collapse Athena">›</button>
+            </header>
+
+            <div class="assistant-tabs" role="tablist" aria-label="Assistant views">
+                <button class="is-active" type="button" role="tab" aria-selected="true">Chat</button>
+                <button type="button" role="tab" aria-selected="false">Analysis</button>
+                <button type="button" role="tab" aria-selected="false">Tools</button>
+            </div>
+
+            <div class="assistant-content">
+                <div data-assistant-home>
+                <section class="assistant-empty">
+                    <div class="empty-athena-mark" aria-hidden="true">✦</div>
+                    <h3>Your page is ready.</h3>
+                    <p>When you’re ready, ask Athena about your manuscript.</p>
+                </section>
+
+                <div class="prompt-box">
+                    <label for="athena-prompt">Ask Athena</label>
+                    <textarea id="athena-prompt" rows="4" placeholder="Ask about your writing…"></textarea>
+                    <div class="prompt-actions">
+                        <button type="button" aria-label="Attach context">＋</button>
+                        <span>Manuscript context</span>
+                        <button class="send-button" type="button" aria-label="Send message">↑</button>
+                    </div>
+                </div>
+
+                <section class="assistant-tools" aria-labelledby="tools-heading">
+                    <h3 id="tools-heading">Writing tools</h3>
+                    <button class="assistant-tool" type="button">
+                        <span class="tool-icon tips-icon">✦</span>
+                        <span><strong>Tips</strong><small>Writing and craft guidance</small></span>
+                        <span aria-hidden="true">›</span>
+                    </button>
+                    <button class="assistant-tool" type="button">
+                        <span class="tool-icon dictionary-icon">Aa</span>
+                        <span><strong>Dictionary &amp; thesaurus</strong><small>Definitions and alternatives</small></span>
+                        <span aria-hidden="true">›</span>
+                    </button>
+                    <button class="assistant-tool" type="button" data-open-grammar>
+                        <span class="tool-icon grammar-icon">✓</span>
+                        <span><strong>Grammar checker</strong><small>Review spelling and clarity</small></span>
+                        <span aria-hidden="true">›</span>
+                    </button>
+                    <button class="assistant-tool" type="button">
+                        <span class="tool-icon originality-icon">≋</span>
+                        <span><strong>Plagiarism checker</strong><small>Check originality</small></span>
+                        <span aria-hidden="true">›</span>
+                    </button>
+                </section>
+                </div>
+
+                <section class="grammar-panel" data-grammar-panel hidden aria-labelledby="grammar-panel-heading">
+                    <button class="grammar-back-button" type="button" data-close-grammar>
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Writing tools
+                    </button>
+                    <header class="grammar-panel-header">
+                        <span class="eyebrow">Active chapter</span>
+                        <h3 id="grammar-panel-heading">Grammar checker</h3>
+                        <p>Review each suggestion to strengthen your writing.</p>
+                    </header>
+
+                    <div class="grammar-check-toolbar">
+                        <span class="grammar-check-state" data-grammar-check-state data-state="ready" aria-live="polite">
+                            <i aria-hidden="true"></i>
+                            <span>Checks after you stop typing</span>
+                        </span>
+                        <button type="button" data-check-grammar-now>Check now</button>
+                    </div>
+
+                    <section class="grammar-quality-card" aria-labelledby="grammar-quality-heading" data-grammar-quality-card>
+                        <div class="grammar-quality-topline">
+                            <div>
+                                <span id="grammar-quality-heading">Grammar quality</span>
+                                <small data-grammar-chapter>Chapter 1</small>
+                            </div>
+                            <strong data-grammar-score>100%</strong>
+                        </div>
+                        <div class="grammar-quality-track" role="progressbar" aria-label="Grammar quality"
+                             aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" data-grammar-progress>
+                            <span></span>
+                        </div>
+                        <p data-grammar-summary>Your writing looks polished.</p>
+                    </section>
+
+                    <div class="grammar-legend" aria-label="Grammar issue colors">
+                        <span><i class="is-spelling"></i> Typo</span>
+                        <span><i class="is-grammar"></i> Grammar</span>
+                        <span><i class="is-clarity"></i> Clarity</span>
+                    </div>
+
+                    <div class="grammar-issue-list" data-grammar-issues aria-live="polite"></div>
+                </section>
+            </div>
+        </aside>
+    </div>
+
+    <div class="font-library-backdrop" data-font-library-backdrop hidden></div>
+    <section class="font-library-dialog" role="dialog" aria-modal="true"
+             aria-labelledby="font-library-title" data-font-library hidden>
+        <header>
+            <div>
+                <span class="eyebrow">Google Fonts</span>
+                <h2 id="font-library-title">Find your typeface</h2>
+                <p>Import a font once, then use it anywhere in your manuscript.</p>
+            </div>
+            <button class="icon-button" type="button" aria-label="Close font library"
+                    data-close-font-library>&times;</button>
+        </header>
+        <div class="font-search">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <label class="sr-only" for="google-font-search">Search Google Fonts</label>
+            <input id="google-font-search" type="search" autocomplete="off"
+                   placeholder="Search nearly 2,000 font families…" data-font-search>
+            <kbd>Esc</kbd>
+        </div>
+        <div class="font-library-meta">
+            <span data-font-library-status>Loading font catalog…</span>
+            <span>Fonts are served by Google</span>
+        </div>
+        <div class="font-results" data-font-results aria-live="polite"></div>
+    </section>
+
+    <aside class="version-history" hidden aria-label="Version history">
+        <header>
+            <div>
+                <span class="eyebrow">Project activity</span>
+                <h2>Version history</h2>
+            </div>
+            <button class="icon-button" type="button" aria-label="Close version history">×</button>
+        </header>
+        <div class="history-empty">
+            <span aria-hidden="true">↶</span>
+            <h3>No versions yet</h3>
+            <p>Saved versions and collaborator changes will appear here.</p>
+        </div>
+    </aside>
+    <script id="default-project-names" type="application/json">{{ project_names | tojson }}</script>
+    <div class="grammar-popover" data-grammar-popover hidden role="dialog" aria-label="Grammar suggestion">
+        <div class="grammar-popover-type" data-grammar-popover-type></div>
+        <strong data-grammar-popover-suggestion></strong>
+        <p data-grammar-popover-message></p>
+        <div>
+            <button class="grammar-dismiss-button" type="button" data-grammar-dismiss>Dismiss</button>
+            <button class="grammar-accept-button" type="button" data-grammar-accept>Accept</button>
+        </div>
+    </div>
+
+    <div class="selection-popover" data-selection-popover hidden role="dialog"
+         aria-label="Selected text actions">
+        <div class="selection-action-view" data-selection-actions>
+            <button type="button" data-selection-comment>
+                <i class="fa-regular fa-comment" aria-hidden="true"></i>
+                <span>Comment</span>
+            </button>
+            <button type="button" data-selection-synonyms hidden>
+                <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i>
+                <span>Synonyms</span>
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
+            <button type="button" data-selection-update-style>
+                <i class="fa-solid fa-paint-roller" aria-hidden="true"></i>
+                <span>Update text style to match</span>
+            </button>
+        </div>
+        <div class="synonym-view" data-synonym-view hidden>
+            <header>
+                <button type="button" data-close-synonyms aria-label="Back to selected text actions">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                </button>
+                <div><small>Synonyms for</small><strong data-synonym-word></strong></div>
+            </header>
+            <div class="synonym-status" data-synonym-status aria-live="polite"></div>
+            <div class="synonym-list" data-synonym-list></div>
+            <footer>Context-ranked by Datamuse</footer>
+        </div>
+    </div>
+
+    <div class="chapter-variable-menu" role="listbox" aria-label="Template variables"
+         data-chapter-variable-menu hidden>
+        <button type="button" role="option" data-insert-chapter-variable>
+            <span>@chapter_number</span>
+            <small>Current chapter number</small>
+        </button>
+    </div>
+
+    <script type="module" src="/static/js/editor.js?v=20260808-14"></script>
+    <script type="module" src="/static/js/workspaces.js?v=20260807-4"></script>
+</body>
+</html>

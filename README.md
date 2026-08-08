@@ -14,8 +14,9 @@ Font style: Playfair, inter
 
 
 ## Dev
-> .env/Scripts/python.exe or its .\.venv\Scripts\Activate.ps1
-
+MAKE SURE YOU USE POWERSHELL!!
 > cd backend
+
+> .env/Scripts/python.exe or its .\.venv\Scripts\Activate.ps1 (2nd one worked)
 
 > uvicorn app.main:app --reload
