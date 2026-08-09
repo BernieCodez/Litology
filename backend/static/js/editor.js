@@ -1,9 +1,9 @@
-import { Editor, Extension } from "https://esm.sh/@tiptap/core@3.29.2";
+import { Editor, Extension, Node } from "https://esm.sh/@tiptap/core@3.29.2";
 import StarterKit from "https://esm.sh/@tiptap/starter-kit@3.29.2";
 import Placeholder from "https://esm.sh/@tiptap/extension-placeholder@3.29.2";
 import { TextAlign } from "https://esm.sh/@tiptap/extension-text-align@3.29.2";
 import { TextStyleKit } from "https://esm.sh/@tiptap/extension-text-style@3.29.2";
-import { Plugin, TextSelection } from "https://esm.sh/@tiptap/pm@3.29.2/state";
+import { NodeSelection, Plugin, TextSelection } from "https://esm.sh/@tiptap/pm@3.29.2/state";
 import { Decoration, DecorationSet } from "https://esm.sh/@tiptap/pm@3.29.2/view";
 import {
     applyChapterSettings,
@@ -12,15 +12,19 @@ import {
     DEFAULT_CHAPTER_SETTINGS,
     insertChapterNumberVariable,
     normalizeChapterSettings,
+    normalizeSceneSeparator,
     openingTextRange,
+    sceneBreakAttributes,
+    sceneBreakContentWithDefaults,
+    sceneSeparatorSymbol,
     STYLE_DEFINITIONS,
     settingsWithMatchedTextStyle,
     styleKeyForAttributes,
-} from "/static/js/chapter-customization.mjs?v=20260808-3";
+} from "/static/js/chapter-customization.mjs?v=20260808-7";
 import {
     enhanceColorPickers,
     setColorPickerValue,
-} from "/static/js/color-picker.mjs?v=20260807-2";
+} from "/static/js/color-picker.mjs?v=20260808-3";
 import {
     enhanceAllSelects,
     refreshCustomSelect,
@@ -40,6 +44,16 @@ import {
     parseFontSize,
     stepFontSize,
 } from "/static/js/font-size-picker.mjs";
+import {
+    createGoogleDocsShortcutMap,
+    shortcutLabel,
+} from "/static/js/editor-shortcuts.mjs?v=20260808-1";
+import {
+    EDITOR_ZOOM_LEVELS,
+    editorZoomShortcutDirection,
+    normalizeEditorZoom,
+    stepEditorZoom,
+} from "/static/js/editor-zoom.mjs?v=20260808-1";
 import {
     analyzeText,
     grammarQuality,
@@ -86,8 +100,12 @@ const decreaseFontSizeButton = document.querySelector("[data-font-size-decrease]
 const increaseFontSizeButton = document.querySelector("[data-font-size-increase]");
 const fontColorControl = document.querySelector("[data-font-color]");
 const fontColorSwatch = document.querySelector("[data-font-color-swatch]");
+const fontColorTrigger = fontColorControl.closest("[data-color-picker]")
+    .querySelector("[data-color-picker-trigger]");
 const highlightColorControl = document.querySelector("[data-highlight-color]");
 const highlightSwatch = document.querySelector("[data-highlight-swatch]");
+const highlightColorTrigger = highlightColorControl.closest("[data-color-picker]")
+    .querySelector("[data-color-picker-trigger]");
 const lineHeightControl = document.querySelector("[data-line-height]");
 const blockStyleControl = document.querySelector("[data-block-style]");
 const chapterCustomizerButton = document.querySelector("[data-open-chapter-customizer]");
@@ -100,10 +118,30 @@ const chapterTemplatePreview = document.querySelector("[data-chapter-template-pr
 const chapterTemplateEditorElement = document.querySelector("[data-chapter-template-editor]");
 const chapterVariableMenu = document.querySelector("[data-chapter-variable-menu]");
 const insertChapterVariableButton = document.querySelector("[data-insert-chapter-variable]");
+const chapterSettingsButton = document.querySelector("[data-open-chapter-settings]");
+const chapterSettingsBackdrop = document.querySelector("[data-chapter-settings-backdrop]");
+const chapterSettingsDialog = document.querySelector("[data-chapter-settings-dialog]");
+const closeChapterSettingsButton = document.querySelector("[data-close-chapter-settings]");
+const cancelChapterSettingsButton = document.querySelector("[data-cancel-chapter-settings]");
+const saveChapterSettingsButton = document.querySelector("[data-save-chapter-settings]");
+const openingEnabledControl = document.querySelector("[data-opening-enabled]");
+const chapterOpeningLayoutControl = document.querySelector("[data-opening-layout]");
+const customSceneDividerInput = document.querySelector("[data-custom-scene-divider]");
+const customDividerField = document.querySelector("[data-custom-divider-field]");
+const insertSceneBreakButton = document.querySelector("[data-insert-scene-break]");
+const sceneBreakPopover = document.querySelector("[data-scene-break-popover]");
+const closeSceneBreakPopoverButton = document.querySelector("[data-close-scene-break-popover]");
 const editorMain = document.querySelector(".editor-main");
 const formatToolbar = document.querySelector(".format-toolbar");
 const statusBar = document.querySelector(".status-bar");
 const statusValues = document.querySelectorAll(".status-group:first-child span");
+const zoomControl = document.querySelector("[data-zoom-control]");
+const zoomTrigger = document.querySelector("[data-zoom-trigger]");
+const zoomValue = document.querySelector("[data-zoom-value]");
+const zoomMenu = document.querySelector("[data-zoom-menu]");
+const zoomOutButton = document.querySelector("[data-zoom-out]");
+const zoomInButton = document.querySelector("[data-zoom-in]");
+const zoomLevelButtons = [...document.querySelectorAll("[data-zoom-level]")];
 const sidebarWordCount = document.querySelector(".sidebar-footer strong");
 const assistantHome = document.querySelector("[data-assistant-home]");
 const assistantTabs = [...document.querySelectorAll(".assistant-tabs button")];
@@ -152,23 +190,30 @@ let grammarPopoverAnimationTimeout = null;
 let englishSpellchecker = null;
 let grammarDictionaryStatus = "loading";
 let activeTextSelection = null;
+let activeColorFormattingSelection = null;
 let synonymRequestController = null;
 let selectionPopoverAnimationTimeout = null;
 let fontSearchTimer = null;
 let fontLibraryTarget = null;
 let fontLibraryTrigger = null;
 let fontSizeMenu = null;
+let fontSizeMenuMode = null;
 let activeChapter = null;
 let currentChapter = null;
 let chapterTemplateSettings = normalizeChapterSettings(DEFAULT_CHAPTER_SETTINGS);
 let chapterTemplateDraft = normalizeChapterSettings(DEFAULT_CHAPTER_SETTINGS);
 let chapterCustomizerOpen = false;
+let chapterSettingsOpen = false;
+let chapterSettingsDraft = normalizeChapterSettings(DEFAULT_CHAPTER_SETTINGS);
+let chapterSettingsPreviousFocus = null;
+let activeSceneBreak = null;
 let templateChapter = null;
 let chapterVariableTarget = null;
 let chapterVariableEditorRange = null;
 let revisionClock = Date.now();
 let addChapterInProgress = false;
 let scrollFrame = null;
+let editorZoom = 100;
 let currentProjectName = projectNames[projectId]
     || projectNameButton?.textContent.trim()
     || "Untitled Project";
@@ -177,7 +222,7 @@ function syncBlockStylePreviews(value = chapterTemplateSettings) {
     const settings = normalizeChapterSettings(value);
     STYLE_DEFINITIONS.forEach(({ key }) => {
         const option = [...blockStyleControl.options].find((candidate) => candidate.value === key);
-        const style = settings.styles[key];
+        const style = key === "opening" ? settings.opening : settings.styles[key];
         if (!option || !style) return;
         option.dataset.previewStyle = "true";
         option.dataset.previewFontFamily = style.fontFamily;
@@ -269,6 +314,83 @@ const commandMap = {
     redo: { command: "redo", history: true },
 };
 
+function runToolbarCommand(editor, action) {
+    const config = commandMap[action];
+    if (!editor || !config || typeof editor.chain().focus()[config.command] !== "function") {
+        return false;
+    }
+    if (["bold", "italic", "underline"].includes(config.active)) {
+        prepareOpeningStyleOverride(editor);
+    }
+    return editor.chain().focus()[config.command]().run();
+}
+
+function changeBlockIndent(editor, direction) {
+    if (!editor) return false;
+    const nodeName = activeBlockNodeName(editor);
+    const currentIndent = Number(editor.getAttributes(nodeName).indent) || 0;
+    const indent = Math.min(6, Math.max(0, currentIndent + direction));
+    if (indent === currentIndent) return true;
+    return editor.chain().focus().updateAttributes(nodeName, { indent }).run();
+}
+
+function changeFontSizeFromKeyboard(editor, direction) {
+    if (!editor) return false;
+    const currentSize = currentEditorFontSize();
+    closeFontSizeMenu();
+    applyFontSize(stepFontSize(currentSize, direction, currentSize));
+    return true;
+}
+
+const googleDocsShortcutsExtension = Extension.create({
+    name: "googleDocsKeyboardShortcuts",
+    priority: 1100,
+    addKeyboardShortcuts() {
+        const editor = this.editor;
+        const setAlignment = (alignment) => () => (
+            editor.chain().focus().setTextAlign(alignment).run()
+        );
+        const setHeading = (level) => () => (
+            editor.chain().focus().setHeading({ level }).run()
+        );
+
+        return createGoogleDocsShortcutMap({
+            undo: () => runToolbarCommand(editor, "undo"),
+            redo: () => runToolbarCommand(editor, "redo"),
+            bold: () => runToolbarCommand(editor, "bold"),
+            italic: () => runToolbarCommand(editor, "italic"),
+            underline: () => runToolbarCommand(editor, "underline"),
+            strikethrough: () => runToolbarCommand(editor, "strikethrough"),
+            clearFormatting: () => editor.chain().focus().unsetAllMarks().clearNodes().run(),
+            fontSizeIncrease: () => changeFontSizeFromKeyboard(editor, 1),
+            fontSizeDecrease: () => changeFontSizeFromKeyboard(editor, -1),
+            indentIncrease: () => changeBlockIndent(editor, 1),
+            indentDecrease: () => changeBlockIndent(editor, -1),
+            normalText: () => editor.chain().focus().setParagraph().run(),
+            heading1: setHeading(1),
+            heading2: setHeading(2),
+            heading3: setHeading(3),
+            heading4: setHeading(4),
+            alignLeft: setAlignment("left"),
+            alignCenter: setAlignment("center"),
+            alignRight: setAlignment("right"),
+            alignJustify: setAlignment("justify"),
+            orderedList: () => runToolbarCommand(editor, "orderedList"),
+            bulletList: () => runToolbarCommand(editor, "bulletList"),
+        });
+    },
+});
+
+function titleWithShortcut(label, action) {
+    const shortcut = shortcutLabel(action);
+    return shortcut ? `${label} (${shortcut})` : label;
+}
+
+document.querySelectorAll("[data-shortcut-action]").forEach((control) => {
+    const label = control.getAttribute("aria-label") || control.title;
+    if (label) control.title = titleWithShortcut(label, control.dataset.shortcutAction);
+});
+
 const chapterVariableExtension = Extension.create({
     name: "chapterVariableAutocomplete",
     priority: 1000,
@@ -292,9 +414,60 @@ const chapterVariableExtension = Extension.create({
     },
 });
 
-const sceneBreakExtension = Extension.create({
-    name: "sceneBreakShortcut",
+function sceneBreakSettingsForEditor(editor) {
+    if (templateChapter?.editor === editor) return chapterTemplateDraft;
+    return chapterStates.find((chapter) => chapter.editor === editor)?.settings
+        || chapterTemplateSettings;
+}
+
+const sceneBreakExtension = Node.create({
+    name: "horizontalRule",
+    group: "block",
+    atom: true,
+    selectable: true,
+
+    addAttributes() {
+        return {
+            preset: { default: "line" },
+            custom: { default: "◆◆◆" },
+            color: { default: "#536b45" },
+            thickness: { default: 2 },
+        };
+    },
+
+    parseHTML() {
+        return [{
+            tag: "hr",
+            getAttrs: (element) => normalizeSceneSeparator({
+                preset: element.getAttribute("data-scene-preset"),
+                custom: element.getAttribute("data-scene-custom"),
+                color: element.getAttribute("data-scene-color"),
+                thickness: element.getAttribute("data-scene-thickness"),
+            }),
+        }];
+    },
+
+    renderHTML({ node }) {
+        const sceneBreak = normalizeSceneSeparator(node.attrs);
+        return ["hr", {
+            "data-scene-break": "",
+            "data-scene-preset": sceneBreak.preset,
+            "data-scene-custom": sceneBreak.custom,
+            "data-scene-symbol": sceneSeparatorSymbol({ sceneSeparator: sceneBreak }),
+            "data-scene-color": sceneBreak.color,
+            "data-scene-thickness": String(sceneBreak.thickness),
+            style: [
+                `--scene-break-color: ${sceneBreak.color}`,
+                `--scene-break-thickness: ${sceneBreak.thickness}px`,
+                `--scene-break-double-stop: ${sceneBreak.thickness * 2}px`,
+                `--scene-break-double-height: ${sceneBreak.thickness * 3}px`,
+                `--scene-break-wave-height: ${8 + (sceneBreak.thickness * 2)}px`,
+            ].join("; "),
+        }];
+    },
+
     addProseMirrorPlugins() {
+        const editor = this.editor;
         return [new Plugin({
             appendTransaction(transactions, _oldState, newState) {
                 if (!transactions.some((transaction) => transaction.docChanged)) return null;
@@ -307,13 +480,17 @@ const sceneBreakExtension = Extension.create({
                 if (!matches.length) return null;
 
                 const transaction = newState.tr;
+                const attributes = sceneBreakAttributes(sceneBreakSettingsForEditor(editor));
                 [...matches].reverse().forEach(({ node, position }) => {
                     transaction.replaceWith(position, position + node.nodeSize, [
-                        newState.schema.nodes.horizontalRule.create(),
+                        newState.schema.nodes.horizontalRule.create(attributes),
                         newState.schema.nodes.paragraph.create(),
                     ]);
                 });
-                const lastPosition = matches[0].position + 2;
+                const lastPosition = Math.min(
+                    transaction.doc.content.size,
+                    matches[0].position + 2,
+                );
                 transaction.setSelection(TextSelection.near(transaction.doc.resolve(lastPosition), 1));
                 return transaction;
             },
@@ -350,19 +527,16 @@ function openingTextExtension(chapter) {
                     decorations(state) {
                         const mode = chapter.settings.opening.mode;
                         if (mode === "none") return DecorationSet.empty;
-                        let openingDecoration = null;
-
-                        state.doc.forEach((node, position) => {
-                            if (openingDecoration || node.type.name !== "paragraph") return;
-                            const range = openingTextRange(node.textContent, mode);
-                            if (!range) return;
-                            const from = position + 1 + range.from;
-                            openingDecoration = Decoration.inline(
-                                from,
-                                position + 1 + range.to,
-                                { class: "chapter-opening-text" }
-                            );
-                        });
+                        const range = openingRangeForDocument(state.doc, mode);
+                        if (!range) return DecorationSet.empty;
+                        const className = openingRangeHasStyleOverride(state.doc, range)
+                            ? "chapter-opening-text has-style-override"
+                            : "chapter-opening-text";
+                        const openingDecoration = Decoration.inline(
+                            range.from,
+                            range.to,
+                            { class: className }
+                        );
 
                         return openingDecoration
                             ? DecorationSet.create(state.doc, [openingDecoration])
@@ -372,6 +546,46 @@ function openingTextExtension(chapter) {
             })];
         },
     });
+}
+
+function openingRangeHasStyleOverride(documentNode, range) {
+    let hasOverride = false;
+    documentNode.nodesBetween(range.from, range.to, (node) => {
+        if (hasOverride || !node.isText) return;
+        const textStyle = node.marks.find((mark) => mark.type.name === "textStyle");
+        hasOverride = Boolean(
+            textStyle
+            && Object.values(textStyle.attrs || {}).some((value) => value != null && value !== "")
+        );
+    });
+    return hasOverride;
+}
+
+function openingRangeForDocument(documentNode, mode) {
+    if (mode === "none") return null;
+    let result = null;
+    documentNode.forEach((node, position) => {
+        if (result || node.type.name !== "paragraph") return;
+        const range = openingTextRange(node.textContent, mode);
+        if (!range) return;
+        result = {
+            from: position + 1 + range.from,
+            to: position + 1 + range.to,
+        };
+    });
+    return result;
+}
+
+function openingRangeForChapter(chapter) {
+    if (!chapter?.editor || chapter.editor.isDestroyed) return null;
+    return openingRangeForDocument(chapter.editor.state.doc, chapter.settings.opening.mode);
+}
+
+function selectionUsesOpeningStyle(chapter, from, to) {
+    const range = openingRangeForChapter(chapter);
+    if (!range) return false;
+    if (from === to) return from >= range.from && from <= range.to;
+    return from >= range.from && to <= range.to;
 }
 
 function grammarIssuesForDocument(documentNode) {
@@ -638,6 +852,58 @@ function syncStats() {
     sidebarWordCount.textContent = labels[0];
 }
 
+const EDITOR_ZOOM_STORAGE_KEY = "litology.editorZoom";
+
+function storedEditorZoom() {
+    try {
+        return normalizeEditorZoom(window.localStorage.getItem(EDITOR_ZOOM_STORAGE_KEY));
+    } catch {
+        return 100;
+    }
+}
+
+function closeZoomMenu({ restoreFocus = false } = {}) {
+    if (zoomMenu.hidden) return;
+    zoomMenu.hidden = true;
+    zoomTrigger.setAttribute("aria-expanded", "false");
+    if (restoreFocus) zoomTrigger.focus();
+}
+
+function openZoomMenu() {
+    zoomMenu.hidden = false;
+    zoomTrigger.setAttribute("aria-expanded", "true");
+    zoomLevelButtons.find((button) => Number(button.dataset.zoomLevel) === editorZoom)?.focus();
+}
+
+function setEditorZoom(value, { persist = true } = {}) {
+    const nextZoom = normalizeEditorZoom(value, editorZoom);
+    const anchor = activeChapter?.article;
+    const anchorTop = anchor?.getBoundingClientRect().top;
+
+    editorZoom = nextZoom;
+    bookScroll.style.setProperty("--book-zoom", String(nextZoom / 100));
+    zoomValue.textContent = `${nextZoom}%`;
+    zoomTrigger.setAttribute("aria-label", `Document zoom, ${nextZoom}%`);
+    zoomOutButton.disabled = nextZoom === EDITOR_ZOOM_LEVELS[0];
+    zoomInButton.disabled = nextZoom === EDITOR_ZOOM_LEVELS.at(-1);
+    zoomLevelButtons.forEach((button) => {
+        const selected = Number(button.dataset.zoomLevel) === nextZoom;
+        button.setAttribute("aria-checked", String(selected));
+    });
+
+    if (anchor && Number.isFinite(anchorTop)) {
+        bookScroll.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
+    }
+
+    if (persist) {
+        try {
+            window.localStorage.setItem(EDITOR_ZOOM_STORAGE_KEY, String(nextZoom));
+        } catch {
+            // Zoom still works when browser storage is unavailable.
+        }
+    }
+}
+
 function issueTypeLabel(type) {
     return ({ spelling: "Typo", grammar: "Grammar", clarity: "Clarity" })[type] || "Suggestion";
 }
@@ -885,7 +1151,7 @@ function openSelectionPopover(selectionContext) {
     showSelectionActions();
     selectionSynonymsButton.hidden = !isSingleSelectedWord(selectionContext.text);
     selectionContext.styleMatch = selectedReusableStyle(
-        selectionContext.chapter.editor,
+        selectionContext.chapter,
         selectionContext.from,
         selectionContext.to,
     );
@@ -897,7 +1163,8 @@ function openSelectionPopover(selectionContext) {
     window.requestAnimationFrame(() => selectionPopover.classList.add("is-visible"));
 }
 
-function selectedReusableStyle(editor, from, to) {
+function selectedReusableStyle(chapter, from, to) {
+    const editor = chapter.editor;
     const blocks = [];
     editor.state.doc.nodesBetween(from, to, (node) => {
         if (!["paragraph", "heading"].includes(node.type.name)) return;
@@ -906,9 +1173,12 @@ function selectedReusableStyle(editor, from, to) {
             attributes: node.attrs || {},
         });
     });
-    const keys = new Set(blocks.map(({ key }) => key));
+    const isOpeningText = selectionUsesOpeningStyle(chapter, from, to);
+    const keys = isOpeningText
+        ? new Set(["opening"])
+        : new Set(blocks.map(({ key }) => key));
     if (keys.size !== 1) return null;
-    const key = blocks[0]?.key;
+    const key = isOpeningText ? "opening" : blocks[0]?.key;
     const textNode = editor.state.doc.nodeAt(from);
     const marks = (textNode?.marks || editor.state.doc.resolve(from).marks()).map(
         (mark) => mark.type.name,
@@ -920,6 +1190,7 @@ function selectedReusableStyle(editor, from, to) {
         label: STYLE_DEFINITIONS.find((definition) => definition.key === key)?.label || key,
         textStyle,
         marks,
+        explicitFormatting: Object.keys(textStyle).length > 0 || marks.length > 0,
         blockAttributes: blocks[0].attributes,
     };
 }
@@ -1315,15 +1586,22 @@ function createTemplateEditor() {
             },
         },
         extensions: [
-            StarterKit.configure({ heading: { levels: [1, 2, 3, 4] } }),
+            StarterKit.configure({
+                heading: { levels: [1, 2, 3, 4] },
+                horizontalRule: false,
+            }),
             TextStyleKit,
             TextAlign.configure({ types: ["heading", "paragraph"] }),
+            googleDocsShortcutsExtension,
             indentExtension,
             sceneBreakExtension,
             chapterVariableExtension,
             Placeholder.configure({ placeholder: "Build the starting content for every new chapterâ€¦" }),
         ],
-        content: chapterTemplateDraft.templateContent,
+        content: sceneBreakContentWithDefaults(
+            chapterTemplateDraft.templateContent,
+            chapterTemplateDraft,
+        ),
         onFocus: () => {
             activeChapter = templateChapter;
             syncToolbar();
@@ -1354,7 +1632,10 @@ function openChapterCustomizer() {
     createTemplateEditor();
     templateChapter.settings = chapterTemplateDraft;
     applyChapterSettings(chapterTemplatePreview, chapterTemplateDraft);
-    templateChapter.editor.commands.setContent(chapterTemplateDraft.templateContent);
+    templateChapter.editor.commands.setContent(sceneBreakContentWithDefaults(
+        chapterTemplateDraft.templateContent,
+        chapterTemplateDraft,
+    ));
     activeChapter = templateChapter;
     syncToolbar();
     closeChapterCustomizerButton.focus();
@@ -1406,6 +1687,183 @@ function resetChapterTemplate() {
     syncToolbar();
 }
 
+function syncSceneBreakControls(container, value) {
+    const sceneBreak = normalizeSceneSeparator(value);
+    const customInput = container.querySelector("[data-custom-scene-divider]");
+    const customField = container.querySelector("[data-custom-divider-field]");
+    const preview = container.querySelector("[data-scene-break-preview]");
+
+    if (customInput && document.activeElement !== customInput) customInput.value = sceneBreak.custom;
+    if (customField) customField.hidden = sceneBreak.preset !== "custom";
+    container.querySelectorAll("[data-scene-divider-presets] button").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.value === sceneBreak.preset);
+        button.setAttribute("aria-pressed", String(button.dataset.value === sceneBreak.preset));
+    });
+    if (preview) {
+        preview.dataset.scenePreset = sceneBreak.preset;
+        preview.dataset.sceneSymbol = sceneSeparatorSymbol({ sceneSeparator: sceneBreak });
+        preview.style.setProperty("--scene-break-color", sceneBreak.color);
+        preview.style.setProperty("--scene-break-thickness", `${sceneBreak.thickness}px`);
+        preview.style.setProperty(
+            "--scene-break-double-stop",
+            `${sceneBreak.thickness * 2}px`,
+        );
+        preview.style.setProperty(
+            "--scene-break-double-height",
+            `${sceneBreak.thickness * 3}px`,
+        );
+        preview.style.setProperty(
+            "--scene-break-wave-height",
+            `${8 + (sceneBreak.thickness * 2)}px`,
+        );
+    }
+    return sceneBreak;
+}
+
+function closeSceneBreakPopover({ restoreEditorFocus = false } = {}) {
+    if (sceneBreakPopover.hidden) return;
+    const chapter = activeSceneBreak?.chapter;
+    sceneBreakPopover.hidden = true;
+    activeSceneBreak = null;
+    if (restoreEditorFocus) chapter?.editor.commands.focus();
+}
+
+function positionSceneBreakPopover(clientX, clientY) {
+    const rect = sceneBreakPopover.getBoundingClientRect();
+    sceneBreakPopover.style.left = `${Math.max(10, Math.min(clientX, window.innerWidth - rect.width - 10))}px`;
+    sceneBreakPopover.style.top = `${Math.max(10, Math.min(clientY, window.innerHeight - rect.height - 10))}px`;
+}
+
+function openSceneBreakPopover(chapter, position, clientX, clientY) {
+    const node = chapter.editor.state.doc.nodeAt(position);
+    if (node?.type.name !== "horizontalRule") return;
+    activeSceneBreak = { chapter, position };
+    chapter.editor.view.dispatch(
+        chapter.editor.state.tr.setSelection(NodeSelection.create(chapter.editor.state.doc, position))
+    );
+    if (chapter === templateChapter) {
+        activeChapter = chapter;
+        syncToolbar();
+    } else {
+        setActiveChapter(chapter);
+    }
+    const configuredCustom = sceneBreakAttributes(
+        sceneBreakSettingsForEditor(chapter.editor),
+    ).custom;
+    const customPresetButton = sceneBreakPopover.querySelector("[data-custom-scene-preset]");
+    customPresetButton.textContent = configuredCustom;
+    customPresetButton.setAttribute("aria-label", `Use custom divider ${configuredCustom}`);
+    syncSceneBreakControls(sceneBreakPopover, node.attrs);
+    sceneBreakPopover.hidden = false;
+    positionSceneBreakPopover(clientX, clientY);
+}
+
+function updateActiveSceneBreak(patch) {
+    if (!activeSceneBreak) return;
+    const { chapter, position } = activeSceneBreak;
+    const node = chapter.editor.state.doc.nodeAt(position);
+    if (node?.type.name !== "horizontalRule") {
+        closeSceneBreakPopover();
+        return;
+    }
+    const attributes = normalizeSceneSeparator({ ...node.attrs, ...patch });
+    chapter.editor.view.dispatch(
+        chapter.editor.state.tr.setNodeMarkup(position, undefined, attributes)
+    );
+    syncSceneBreakControls(sceneBreakPopover, attributes);
+}
+
+function insertSceneBreak() {
+    const editor = activeChapter?.editor;
+    if (!editor) return;
+    closeSceneBreakPopover();
+    const attributes = sceneBreakAttributes(sceneBreakSettingsForEditor(editor));
+    editor.chain().focus().insertContent([
+        { type: "horizontalRule", attrs: attributes },
+        { type: "paragraph" },
+    ]).scrollIntoView().run();
+}
+
+function syncChapterSettingsDialog() {
+    chapterSettingsDraft = normalizeChapterSettings(chapterSettingsDraft);
+    const { opening, sceneSeparator } = chapterSettingsDraft;
+    const openingEnabled = opening.mode !== "none";
+
+    openingEnabledControl.checked = openingEnabled;
+    syncSceneBreakControls(chapterSettingsDialog, sceneSeparator);
+
+    chapterSettingsDialog.querySelectorAll("[data-opening-controls]").forEach((group) => {
+        group.classList.toggle("is-disabled", !openingEnabled);
+        group.querySelectorAll("button, input, select").forEach((control) => {
+            control.disabled = !openingEnabled;
+        });
+    });
+    chapterSettingsDialog.querySelectorAll("[data-opening-mode] button").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.value === opening.mode);
+    });
+    chapterOpeningLayoutControl.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.value === opening.layout);
+    });
+}
+
+function openChapterSettings() {
+    if (chapterCustomizerOpen) closeChapterCustomizer({ restoreFocus: false });
+    chapterSettingsDraft = normalizeChapterSettings(chapterTemplateSettings);
+    chapterSettingsPreviousFocus = document.activeElement;
+    chapterSettingsOpen = true;
+    chapterSettingsBackdrop.hidden = false;
+    chapterSettingsDialog.hidden = false;
+    chapterSettingsButton.setAttribute("aria-expanded", "true");
+    closeGrammarPopover();
+    closeSelectionPopover();
+    closeFontSizeMenu();
+    syncChapterSettingsDialog();
+    closeChapterSettingsButton.focus();
+}
+
+function closeChapterSettings({ restoreFocus = true } = {}) {
+    if (!chapterSettingsOpen) return;
+    chapterSettingsOpen = false;
+    chapterSettingsBackdrop.hidden = true;
+    chapterSettingsDialog.hidden = true;
+    chapterSettingsButton.setAttribute("aria-expanded", "false");
+    if (restoreFocus) (chapterSettingsPreviousFocus || chapterSettingsButton).focus();
+    chapterSettingsPreviousFocus = null;
+}
+
+function saveChapterSettings() {
+    const savedSettings = normalizeChapterSettings(chapterSettingsDraft);
+    chapterTemplateSettings = normalizeChapterSettings({
+        ...chapterTemplateSettings,
+        opening: savedSettings.opening,
+        sceneSeparator: savedSettings.sceneSeparator,
+    });
+    saveChapterSettingsButton.disabled = true;
+    showSaveState("Saving chapter settings…", "saving");
+
+    chapterFontFamilies(chapterTemplateSettings).forEach((family) => {
+        if (!isBuiltInFont(family)) registerImportedFont(family);
+    });
+    chapterStates.forEach((chapter) => {
+        chapter.settings = normalizeChapterSettings({
+            ...chapter.settings,
+            opening: chapterTemplateSettings.opening,
+            sceneSeparator: chapterTemplateSettings.sceneSeparator,
+        });
+        applyChapterSettings(chapter.article, chapter.settings);
+        chapter.editor.view.dispatch(
+            chapter.editor.state.tr.setMeta("chapterSettingsChanged", true)
+        );
+        chapter.revision = nextRevision();
+        writeBackup(chapter);
+        scheduleChapterSave(chapter, 0);
+    });
+
+    saveChapterSettingsButton.disabled = false;
+    closeChapterSettings({ restoreFocus: false });
+    chapterSettingsButton.focus();
+}
+
 function insertChapterVariable() {
     if (chapterVariableTarget?.kind === "input") {
         const { input, chapter } = chapterVariableTarget;
@@ -1442,6 +1900,86 @@ function activeBlockStyleKey(editor) {
         : "normal";
 }
 
+function activeReusableStyleKey(chapter = activeChapter) {
+    const editor = chapter?.editor;
+    if (!editor) return "normal";
+    const { from, to } = editor.state.selection;
+    return selectionUsesOpeningStyle(chapter, from, to)
+        ? "opening"
+        : activeBlockStyleKey(editor);
+}
+
+function reusableStyleSettings(chapter, styleKey) {
+    if (!chapter) return null;
+    return styleKey === "opening"
+        ? chapter.settings.opening
+        : chapter.settings.styles[styleKey];
+}
+
+function selectionHasExplicitFormatting(editor) {
+    const textStyle = editor?.getAttributes("textStyle") || {};
+    return Object.keys(textStyle).some((key) => textStyle[key] != null && textStyle[key] !== "")
+        || ["bold", "italic", "underline"].some((mark) => editor?.isActive(mark));
+}
+
+function prepareOpeningStyleOverride(editor) {
+    if (
+        !editor
+        || editor.state.selection.empty
+        || activeReusableStyleKey(activeChapter) !== "opening"
+        || selectionHasExplicitFormatting(editor)
+    ) return;
+
+    const style = activeChapter.settings.opening;
+    let chain = editor.chain().focus()
+        .setFontFamily(style.fontFamily)
+        .setFontSize(`${style.fontSize}px`)
+        .setColor(style.color);
+    chain = style.bold ? chain.setBold() : chain.unsetBold();
+    chain = style.italic ? chain.setItalic() : chain.unsetItalic();
+    chain = style.underline ? chain.setUnderline() : chain.unsetUnderline();
+    chain.run();
+}
+
+function rememberColorFormattingSelection(control) {
+    const editor = activeChapter?.editor;
+    const selection = editor?.state.selection;
+    activeColorFormattingSelection = editor && selection && !selection.empty
+        ? { control, editor, from: selection.from, to: selection.to }
+        : null;
+}
+
+function restoreColorFormattingSelection(control) {
+    const saved = activeColorFormattingSelection;
+    const editor = saved?.control === control ? saved.editor : activeChapter?.editor;
+    if (!editor || editor.isDestroyed) return null;
+    if (
+        saved
+        && saved.editor === editor
+        && saved.from >= 0
+        && saved.to <= editor.state.doc.content.size
+        && (editor.state.selection.from !== saved.from || editor.state.selection.to !== saved.to)
+    ) {
+        editor.view.dispatch(editor.state.tr.setSelection(
+            TextSelection.create(editor.state.doc, saved.from, saved.to),
+        ));
+    }
+    return editor;
+}
+
+[
+    [fontColorControl, fontColorTrigger],
+    [highlightColorControl, highlightColorTrigger],
+].forEach(([control, trigger]) => {
+    const wrapper = trigger.closest("[data-color-picker]");
+    wrapper.addEventListener("color-picker-open", () => rememberColorFormattingSelection(control));
+    wrapper.addEventListener("color-picker-close", () => {
+        if (activeColorFormattingSelection?.control === control) {
+            activeColorFormattingSelection = null;
+        }
+    });
+});
+
 function activeBlockNodeName(editor) {
     return editor?.isActive("heading") ? "heading" : "paragraph";
 }
@@ -1461,12 +1999,37 @@ function resolvedFontSize(textStyle, reusableStyle) {
     return normalizeFontSize(textStyle?.fontSize, reusableStyle?.fontSize || 12);
 }
 
+function selectedSceneBreak(editor = activeChapter?.editor) {
+    const selection = editor?.state.selection;
+    if (!(selection instanceof NodeSelection) || selection.node.type.name !== "horizontalRule") {
+        return null;
+    }
+    return {
+        attributes: normalizeSceneSeparator(selection.node.attrs),
+        node: selection.node,
+        position: selection.from,
+    };
+}
+
+function updateSelectedSceneBreak(editor, patch) {
+    const selected = selectedSceneBreak(editor);
+    if (!selected) return false;
+    const attributes = normalizeSceneSeparator({ ...selected.attributes, ...patch });
+    editor.view.dispatch(
+        editor.state.tr.setNodeMarkup(selected.position, undefined, attributes).scrollIntoView()
+    );
+    return true;
+}
+
 function currentEditorFontSize() {
     const editor = activeChapter?.editor;
     if (!editor) return 12;
+    const sceneBreak = selectedSceneBreak(editor);
+    if (sceneBreak) return sceneBreak.attributes.thickness;
+    const styleKey = activeReusableStyleKey(activeChapter);
     return resolvedFontSize(
         editor.getAttributes("textStyle") || {},
-        activeChapter.settings.styles[activeBlockStyleKey(editor)]
+        reusableStyleSettings(activeChapter, styleKey)
     );
 }
 
@@ -1511,6 +2074,18 @@ function closeFontSizeMenu({ restoreFocus = false } = {}) {
 function applyFontSize(value, { focusEditor = true } = {}) {
     const editor = activeChapter?.editor;
     if (!editor) return;
+    const sceneBreak = selectedSceneBreak(editor);
+    if (sceneBreak) {
+        const thickness = Math.min(8, Math.max(1, normalizeFontSize(
+            value,
+            sceneBreak.attributes.thickness,
+        )));
+        updateSelectedSceneBreak(editor, { thickness });
+        fontSizeInput.value = formatFontSize(thickness);
+        syncFontSizeOptions();
+        return;
+    }
+    prepareOpeningStyleOverride(editor);
     const size = normalizeFontSize(value, currentEditorFontSize());
     fontSizeInput.value = formatFontSize(size);
     if (focusEditor) {
@@ -1522,14 +2097,39 @@ function applyFontSize(value, { focusEditor = true } = {}) {
 }
 
 function ensureFontSizeMenu() {
-    if (fontSizeMenu) return fontSizeMenu;
-    fontSizeMenu = document.createElement("div");
-    fontSizeMenu.id = "font-size-menu";
-    fontSizeMenu.className = "custom-select-menu font-size-menu";
-    fontSizeMenu.setAttribute("role", "listbox");
-    fontSizeMenu.setAttribute("aria-label", "Font size presets");
-    fontSizeMenu.hidden = true;
-    FONT_SIZE_PRESETS.forEach((size) => {
+    if (!fontSizeMenu) {
+        fontSizeMenu = document.createElement("div");
+        fontSizeMenu.id = "font-size-menu";
+        fontSizeMenu.className = "custom-select-menu font-size-menu";
+        fontSizeMenu.setAttribute("role", "listbox");
+        fontSizeMenu.hidden = true;
+        fontSizeMenu.addEventListener("pointerdown", (event) => event.stopPropagation());
+        fontSizeMenu.addEventListener("keydown", (event) => {
+            const options = [...fontSizeMenu.querySelectorAll("[data-font-size-option]")];
+            const currentIndex = options.indexOf(document.activeElement);
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                const direction = event.key === "ArrowDown" ? 1 : -1;
+                const startIndex = currentIndex >= 0 ? currentIndex : 0;
+                options[(startIndex + direction + options.length) % options.length]?.focus();
+            } else if (event.key === "Escape") {
+                event.preventDefault();
+                closeFontSizeMenu({ restoreFocus: true });
+            }
+        });
+        document.body.append(fontSizeMenu);
+    }
+
+    const nextMode = selectedSceneBreak() ? "scene-break" : "text";
+    if (fontSizeMenuMode === nextMode) return fontSizeMenu;
+    fontSizeMenuMode = nextMode;
+    fontSizeMenu.replaceChildren();
+    fontSizeMenu.setAttribute(
+        "aria-label",
+        nextMode === "scene-break" ? "Scene break thickness presets" : "Font size presets",
+    );
+    const sizes = nextMode === "scene-break" ? [1, 2, 3, 4, 5, 6, 7, 8] : FONT_SIZE_PRESETS;
+    sizes.forEach((size) => {
         const option = document.createElement("button");
         option.type = "button";
         option.className = "custom-select-option font-size-option";
@@ -1542,21 +2142,6 @@ function ensureFontSizeMenu() {
         });
         fontSizeMenu.append(option);
     });
-    fontSizeMenu.addEventListener("pointerdown", (event) => event.stopPropagation());
-    fontSizeMenu.addEventListener("keydown", (event) => {
-        const options = [...fontSizeMenu.querySelectorAll("[data-font-size-option]")];
-        const currentIndex = options.indexOf(document.activeElement);
-        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-            event.preventDefault();
-            const direction = event.key === "ArrowDown" ? 1 : -1;
-            const startIndex = currentIndex >= 0 ? currentIndex : 0;
-            options[(startIndex + direction + options.length) % options.length]?.focus();
-        } else if (event.key === "Escape") {
-            event.preventDefault();
-            closeFontSizeMenu({ restoreFocus: true });
-        }
-    });
-    document.body.append(fontSizeMenu);
     return fontSizeMenu;
 }
 
@@ -1579,27 +2164,42 @@ function openFontSizeMenu() {
 function syncToolbar() {
     syncBlockStylePreviews(chapterTemplateSettings);
     const editor = activeChapter?.editor;
+    const sceneBreak = selectedSceneBreak(editor);
     const textStyle = editor?.getAttributes("textStyle") || {};
-    const blockStyleKey = editor ? activeBlockStyleKey(editor) : "normal";
-    const reusableStyle = activeChapter?.settings.styles[blockStyleKey];
+    const reusableStyleKey = editor ? activeReusableStyleKey(activeChapter) : "normal";
+    const reusableStyle = reusableStyleSettings(activeChapter, reusableStyleKey);
+    const explicitOpeningFormatting = reusableStyleKey === "opening"
+        && selectionHasExplicitFormatting(editor);
     toolbarButtons.forEach((button) => {
         const config = commandMap[button.dataset.command];
-        const isActive = Boolean(editor && config?.active && editor.isActive(config.active));
+        const inheritedOpeningState = reusableStyleKey === "opening"
+            && !explicitOpeningFormatting
+            && ["bold", "italic", "underline"].includes(config?.active)
+            ? Boolean(reusableStyle?.[config.active])
+            : null;
+        const isActive = inheritedOpeningState ?? Boolean(
+            editor && config?.active && editor.isActive(config.active)
+        );
         const canUseHistory = editor && config?.history
             ? Boolean(editor.can()[config.command]?.())
             : true;
         button.classList.toggle("is-active", isActive);
         button.setAttribute("aria-pressed", String(isActive));
-        button.disabled = !editor || !canUseHistory;
+        button.disabled = !editor || !canUseHistory || Boolean(sceneBreak && !config?.history);
     });
 
-    [fontFamilyControl, fontColorControl, highlightColorControl, lineHeightControl,
-        blockStyleControl, alignmentMenu, fontSizeInput,
-        decreaseFontSizeButton, increaseFontSizeButton]
+    [fontColorControl, fontSizeInput, decreaseFontSizeButton, increaseFontSizeButton]
         .forEach((control) => { control.disabled = !editor; });
+    [fontFamilyControl, highlightColorControl, lineHeightControl, blockStyleControl, alignmentMenu]
+        .forEach((control) => { control.disabled = !editor || Boolean(sceneBreak); });
+    insertSceneBreakButton.disabled = !editor;
+    alignmentMenu.disabled = !editor || Boolean(sceneBreak) || reusableStyleKey === "opening";
+    lineHeightControl.disabled = !editor || Boolean(sceneBreak) || reusableStyleKey === "opening";
 
     const resolvedFontFamily = textStyle.fontFamily || reusableStyle?.fontFamily || "Playfair Display";
-    const currentFontSize = resolvedFontSize(textStyle, reusableStyle);
+    const currentFontSize = sceneBreak
+        ? sceneBreak.attributes.thickness
+        : resolvedFontSize(textStyle, reusableStyle);
     const alignmentAttributes = editor?.getAttributes(activeBlockNodeName(editor)) || {};
     const resolvedAlignment = alignmentAttributes.textAlign || reusableStyle?.alignment || "left";
     fontFamilyControl.value = resolvedFontFamily;
@@ -1610,11 +2210,33 @@ function syncToolbar() {
     alignmentMenu.value = resolvedAlignment;
     syncAlignmentIcon(resolvedAlignment);
     lineHeightControl.value = textStyle.lineHeight || "";
-    setColorPickerValue(fontColorControl, textStyle.color || fontColorControl.value);
+    setColorPickerValue(
+        fontColorControl,
+        sceneBreak?.attributes.color || textStyle.color || reusableStyle?.color || fontColorControl.value,
+    );
     setColorPickerValue(highlightColorControl, textStyle.backgroundColor || highlightColorControl.value);
+    fontSizeInput.setAttribute("aria-label", sceneBreak ? "Scene break thickness" : "Font size");
+    decreaseFontSizeButton.setAttribute(
+        "aria-label",
+        sceneBreak ? "Decrease scene break thickness" : "Decrease font size",
+    );
+    decreaseFontSizeButton.title = titleWithShortcut(
+        decreaseFontSizeButton.getAttribute("aria-label"),
+        "fontSizeDecrease",
+    );
+    increaseFontSizeButton.setAttribute(
+        "aria-label",
+        sceneBreak ? "Increase scene break thickness" : "Increase font size",
+    );
+    increaseFontSizeButton.title = titleWithShortcut(
+        increaseFontSizeButton.getAttribute("aria-label"),
+        "fontSizeIncrease",
+    );
+    fontColorTrigger.setAttribute("aria-label", sceneBreak ? "Scene break color" : "Font color");
+    fontColorTrigger.title = fontColorTrigger.getAttribute("aria-label");
 
     if (editor) {
-        blockStyleControl.value = blockStyleKey;
+        blockStyleControl.value = reusableStyleKey;
     }
     [fontFamilyControl, lineHeightControl, blockStyleControl, alignmentMenu]
         .forEach(refreshCustomSelect);
@@ -1863,9 +2485,13 @@ function createChapterState(chapterDocument, { needsSync = false } = {}) {
             },
         },
         extensions: [
-            StarterKit.configure({ heading: { levels: [1, 2, 3, 4] } }),
+            StarterKit.configure({
+                heading: { levels: [1, 2, 3, 4] },
+                horizontalRule: false,
+            }),
             TextStyleKit,
             TextAlign.configure({ types: ["heading", "paragraph"] }),
+            googleDocsShortcutsExtension,
             indentExtension,
             sceneBreakExtension,
             openingTextExtension(chapter),
@@ -1876,7 +2502,7 @@ function createChapterState(chapterDocument, { needsSync = false } = {}) {
                     : "Begin writing…",
             }),
         ],
-        content: chapterDocument.content,
+        content: sceneBreakContentWithDefaults(chapterDocument.content, chapterSettings),
         onCreate: () => {
             syncChapterTitle(chapter);
             syncStats();
@@ -2408,6 +3034,62 @@ chapterCustomizerButton.addEventListener("click", openChapterCustomizer);
 closeChapterCustomizerButton.addEventListener("click", () => closeChapterCustomizer());
 applyChapterTemplateButton.addEventListener("click", applyChapterTemplate);
 resetChapterTemplateButton.addEventListener("click", resetChapterTemplate);
+chapterSettingsButton.addEventListener("click", openChapterSettings);
+closeChapterSettingsButton.addEventListener("click", () => closeChapterSettings());
+cancelChapterSettingsButton.addEventListener("click", () => closeChapterSettings());
+chapterSettingsBackdrop.addEventListener("click", () => closeChapterSettings());
+saveChapterSettingsButton.addEventListener("click", saveChapterSettings);
+insertSceneBreakButton.addEventListener("click", insertSceneBreak);
+
+openingEnabledControl.addEventListener("change", () => {
+    if (openingEnabledControl.checked) {
+        chapterSettingsDraft.opening.mode = openingEnabledControl.dataset.previousMode || "character";
+    } else {
+        openingEnabledControl.dataset.previousMode = chapterSettingsDraft.opening.mode === "none"
+            ? "character"
+            : chapterSettingsDraft.opening.mode;
+        chapterSettingsDraft.opening.mode = "none";
+    }
+    syncChapterSettingsDialog();
+});
+chapterSettingsDialog.querySelectorAll("[data-opening-mode] button").forEach((button) => {
+    button.addEventListener("click", () => {
+        chapterSettingsDraft.opening.mode = button.dataset.value;
+        openingEnabledControl.dataset.previousMode = button.dataset.value;
+        syncChapterSettingsDialog();
+    });
+});
+chapterOpeningLayoutControl.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => {
+        chapterSettingsDraft.opening.layout = button.dataset.value;
+        syncChapterSettingsDialog();
+    });
+});
+chapterSettingsDialog.querySelectorAll("[data-scene-divider-presets] button").forEach((button) => {
+    button.addEventListener("click", () => {
+        chapterSettingsDraft.sceneSeparator.preset = button.dataset.value;
+        syncChapterSettingsDialog();
+        if (button.dataset.value === "custom") customSceneDividerInput.focus();
+    });
+});
+customSceneDividerInput.addEventListener("input", () => {
+    chapterSettingsDraft.sceneSeparator.custom = customSceneDividerInput.value;
+    syncSceneBreakControls(chapterSettingsDialog, chapterSettingsDraft.sceneSeparator);
+});
+sceneBreakPopover.querySelectorAll("[data-scene-divider-presets] button").forEach((button) => {
+    button.addEventListener("click", () => {
+        const patch = { preset: button.dataset.value };
+        if (button.dataset.value === "custom" && activeSceneBreak) {
+            patch.custom = sceneBreakAttributes(
+                sceneBreakSettingsForEditor(activeSceneBreak.chapter.editor),
+            ).custom;
+        }
+        updateActiveSceneBreak(patch);
+    });
+});
+closeSceneBreakPopoverButton.addEventListener("click", () => {
+    closeSceneBreakPopover({ restoreEditorFocus: true });
+});
 insertChapterVariableButton.addEventListener("click", insertChapterVariable);
 insertChapterVariableButton.addEventListener("pointerdown", (event) => event.preventDefault());
 chapterTemplateEditorElement.addEventListener("keydown", (event) => {
@@ -2426,14 +3108,7 @@ document.querySelectorAll("[data-section]").forEach((button) => {
 
 toolbarButtons.forEach((button) => {
     button.addEventListener("click", () => {
-        const config = commandMap[button.dataset.command];
-        const editor = activeChapter?.editor;
-
-        if (!editor || !config || typeof editor.chain().focus()[config.command] !== "function") {
-            return;
-        }
-
-        editor.chain().focus()[config.command]().run();
+        runToolbarCommand(activeChapter?.editor, button.dataset.command);
     });
 });
 
@@ -2447,17 +3122,23 @@ alignmentMenu.addEventListener("change", () => {
 alignmentMenu.addEventListener("custom-select-action", (event) => {
     const editor = activeChapter?.editor;
     if (!editor || !["increase-indent", "decrease-indent"].includes(event.detail.action)) return;
-    const nodeName = activeBlockNodeName(editor);
-    const currentIndent = Number(editor.getAttributes(nodeName).indent) || 0;
     const direction = event.detail.action === "increase-indent" ? 1 : -1;
-    const indent = Math.min(6, Math.max(0, currentIndent + direction));
-    editor.chain().focus().updateAttributes(nodeName, { indent }).run();
+    changeBlockIndent(editor, direction);
 });
 
 blockStyleControl.addEventListener("change", () => {
     const editor = activeChapter?.editor;
     const definition = STYLE_DEFINITIONS.find(({ key }) => key === blockStyleControl.value);
     if (!editor || !definition) return;
+    if (definition.node === "opening") {
+        const range = openingRangeForChapter(activeChapter);
+        if (range) {
+            editor.chain().focus().setTextSelection({ from: range.from, to: range.to }).run();
+        } else {
+            openChapterSettings();
+        }
+        return;
+    }
     const chain = editor.chain().focus();
     if (definition.node === "paragraph") {
         chain.setParagraph().run();
@@ -2469,6 +3150,7 @@ blockStyleControl.addEventListener("change", () => {
 fontFamilyControl.addEventListener("change", () => {
     const editor = activeChapter?.editor;
     if (!editor) return;
+    prepareOpeningStyleOverride(editor);
     const chain = editor.chain().focus();
     (fontFamilyControl.value
         ? chain.setFontFamily(fontFamilyControl.value)
@@ -2518,7 +3200,55 @@ increaseFontSizeButton.addEventListener("click", () => {
     applyFontSize(stepFontSize(fontSizeInput.value, 1, currentEditorFontSize()));
 });
 
+zoomTrigger.addEventListener("click", () => {
+    if (zoomMenu.hidden) openZoomMenu();
+    else closeZoomMenu();
+});
+
+zoomOutButton.addEventListener("click", () => {
+    setEditorZoom(stepEditorZoom(editorZoom, -1));
+});
+
+zoomInButton.addEventListener("click", () => {
+    setEditorZoom(stepEditorZoom(editorZoom, 1));
+});
+
+zoomLevelButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        setEditorZoom(button.dataset.zoomLevel);
+        closeZoomMenu({ restoreFocus: true });
+    });
+});
+
+zoomMenu.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        event.preventDefault();
+        closeZoomMenu({ restoreFocus: true });
+        return;
+    }
+
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const currentIndex = Math.max(0, zoomLevelButtons.indexOf(document.activeElement));
+    const nextIndex = event.key === "Home"
+        ? 0
+        : event.key === "End"
+            ? zoomLevelButtons.length - 1
+            : (currentIndex + (event.key === "ArrowDown" ? 1 : -1) + zoomLevelButtons.length)
+                % zoomLevelButtons.length;
+    zoomLevelButtons[nextIndex].focus();
+});
+
+document.addEventListener("keydown", (event) => {
+    if (statusBar.hidden) return;
+    const direction = editorZoomShortcutDirection(event);
+    if (!direction) return;
+    event.preventDefault();
+    setEditorZoom(stepEditorZoom(editorZoom, direction));
+}, { capture: true });
+
 document.addEventListener("pointerdown", (event) => {
+    if (!zoomMenu.hidden && !zoomControl.contains(event.target)) closeZoomMenu();
     if (
         fontSizeMenu
         && !fontSizeMenu.hidden
@@ -2538,6 +3268,13 @@ document.addEventListener("pointerdown", (event) => {
         closeSelectionPopover();
     }
     if (
+        !sceneBreakPopover.hidden
+        && !sceneBreakPopover.contains(event.target)
+        && !event.target.closest?.("hr[data-scene-break]")
+    ) {
+        closeSceneBreakPopover();
+    }
+    if (
         !chapterVariableMenu.hidden
         && !chapterVariableMenu.contains(event.target)
         && event.target !== chapterVariableTarget?.input
@@ -2545,6 +3282,20 @@ document.addEventListener("pointerdown", (event) => {
     ) {
         hideChapterVariableMenu();
     }
+});
+
+document.addEventListener("contextmenu", (event) => {
+    const sceneBreakElement = event.target.closest?.("hr[data-scene-break]");
+    if (!sceneBreakElement) return;
+    const article = sceneBreakElement.closest(".chapter-section");
+    const chapter = article === templateChapter?.article
+        ? templateChapter
+        : chapterStates.find((candidate) => candidate.article === article);
+    if (!chapter?.editor) return;
+    event.preventDefault();
+    let position = chapter.editor.view.posAtDOM(sceneBreakElement, 0);
+    if (chapter.editor.state.doc.nodeAt(position)?.type.name !== "horizontalRule") position -= 1;
+    openSceneBreakPopover(chapter, position, event.clientX, event.clientY);
 });
 
 window.addEventListener("resize", () => {
@@ -2559,6 +3310,7 @@ window.addEventListener("resize", () => {
     }
     if (!selectionPopover.hidden) closeSelectionPopover();
     if (!chapterVariableMenu.hidden) hideChapterVariableMenu();
+    if (!sceneBreakPopover.hidden) closeSceneBreakPopover();
 });
 document.addEventListener("scroll", (event) => {
     if (fontSizeMenu && !fontSizeMenu.hidden && event.target !== fontSizeMenu) {
@@ -2570,18 +3322,27 @@ document.addEventListener("scroll", (event) => {
     if (!selectionPopover.hidden && !selectionPopover.contains(event.target)) {
         closeSelectionPopover();
     }
+    if (!sceneBreakPopover.hidden && !sceneBreakPopover.contains(event.target)) {
+        closeSceneBreakPopover();
+    }
 }, true);
 
 fontColorControl.addEventListener("input", () => {
-    const editor = activeChapter?.editor;
-    fontColorSwatch.style.backgroundColor = fontColorControl.value;
-    editor?.chain().focus().setColor(fontColorControl.value).run();
+    const color = fontColorControl.value;
+    const editor = restoreColorFormattingSelection(fontColorControl);
+    fontColorSwatch.style.backgroundColor = color;
+    if (updateSelectedSceneBreak(editor, { color })) return;
+    prepareOpeningStyleOverride(editor);
+    editor?.chain().focus().setColor(color).run();
+    setColorPickerValue(fontColorControl, color);
 });
 
 highlightColorControl.addEventListener("input", () => {
-    const editor = activeChapter?.editor;
-    highlightSwatch.style.backgroundColor = highlightColorControl.value;
-    editor?.chain().focus().setBackgroundColor(highlightColorControl.value).run();
+    const color = highlightColorControl.value;
+    const editor = restoreColorFormattingSelection(highlightColorControl);
+    highlightSwatch.style.backgroundColor = color;
+    editor?.chain().focus().setBackgroundColor(color).run();
+    setColorPickerValue(highlightColorControl, color);
 });
 
 lineHeightControl.addEventListener("change", () => {
@@ -2608,7 +3369,13 @@ fontSearch.addEventListener("input", () => {
     fontSearchTimer = setTimeout(renderFontCatalog, 180);
 });
 document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !selectionPopover.hidden) {
+    if (event.key === "Escape" && !sceneBreakPopover.hidden) {
+        event.preventDefault();
+        closeSceneBreakPopover({ restoreEditorFocus: true });
+    } else if (event.key === "Escape" && chapterSettingsOpen) {
+        event.preventDefault();
+        closeChapterSettings();
+    } else if (event.key === "Escape" && !selectionPopover.hidden) {
         event.preventDefault();
         closeSelectionPopover();
     } else if (event.key === "Escape" && chapterCustomizerOpen && chapterVariableMenu.hidden) {
@@ -2667,5 +3434,6 @@ window.addEventListener("pagehide", () => {
     });
 });
 
+setEditorZoom(storedEditorZoom(), { persist: false });
 void loadEnglishDictionary();
 await loadBook();

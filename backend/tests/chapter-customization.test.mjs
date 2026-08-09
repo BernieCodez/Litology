@@ -8,7 +8,9 @@ import {
     chapterNumberLabel,
     insertChapterNumberVariable,
     normalizeChapterSettings,
+    normalizeSceneSeparator,
     openingTextRange,
+    sceneBreakContentWithDefaults,
     sceneSeparatorSymbol,
     settingsWithMatchedTextStyle,
     styleKeyForAttributes,
@@ -39,6 +41,21 @@ test("selected inline formatting can update its reusable text style", () => {
     assert.equal(settings.styles.normal.italic, true);
     assert.equal(settings.styles.normal.alignment, "center");
     assert.equal(settings.styles.h1.color, DEFAULT_CHAPTER_SETTINGS.styles.h1.color);
+});
+
+test("selected opening text can update the reusable opening text style", () => {
+    const settings = settingsWithMatchedTextStyle(DEFAULT_CHAPTER_SETTINGS, "opening", {
+        textStyle: { color: "#536b45", fontFamily: "Georgia", fontSize: "52px" },
+        marks: ["italic", "underline"],
+        explicitFormatting: true,
+    });
+
+    assert.equal(settings.opening.color, "#536b45");
+    assert.equal(settings.opening.fontFamily, "Georgia");
+    assert.equal(settings.opening.fontSize, 52);
+    assert.equal(settings.opening.bold, false);
+    assert.equal(settings.opening.italic, true);
+    assert.equal(settings.opening.underline, true);
 });
 
 test("chapter templates keep a reusable default chapter name", () => {
@@ -101,8 +118,9 @@ test("opening text supports sentence lead-ins and advanced emphasis", () => {
         opening: {
             mode: "sentence",
             layout: "inline",
-            fontSize: 1.1,
+            fontSize: 42,
             italic: true,
+            underline: true,
             uppercase: true,
             letterSpacing: 2.5,
         },
@@ -110,8 +128,9 @@ test("opening text supports sentence lead-ins and advanced emphasis", () => {
 
     assert.equal(settings.opening.mode, "sentence");
     assert.equal(settings.opening.layout, "inline");
-    assert.equal(settings.opening.fontSize, 1.1);
+    assert.equal(settings.opening.fontSize, 42);
     assert.equal(settings.opening.italic, true);
+    assert.equal(settings.opening.underline, true);
     assert.equal(settings.opening.uppercase, true);
     assert.equal(settings.opening.letterSpacing, 2.5);
 });
@@ -161,7 +180,7 @@ test("unsafe and out-of-range customization values are constrained", () => {
                 lineHeight: 0,
             },
         },
-        opening: { fontSize: 20, color: "not-a-color" },
+        opening: { fontSize: 500, color: "not-a-color" },
     });
 
     assert.equal(settings.styles.normal.fontFamily, "Playfair Display");
@@ -169,7 +188,7 @@ test("unsafe and out-of-range customization values are constrained", () => {
     assert.equal(settings.styles.normal.color, "#14131f");
     assert.equal(settings.styles.normal.alignment, "left");
     assert.equal(settings.styles.normal.lineHeight, 0.8);
-    assert.equal(settings.opening.fontSize, 8);
+    assert.equal(settings.opening.fontSize, 144);
     assert.equal(settings.opening.color, "#d9825b");
 });
 
@@ -188,6 +207,49 @@ test("editor heading levels map to the visible style names", () => {
     assert.equal(styleKeyForAttributes({ level: 4 }), "h4");
     assert.equal(styleKeyForAttributes({ level: 5 }), "normal");
     assert.equal(styleKeyForAttributes({}), "normal");
+});
+
+test("scene break defaults normalize line styling and preserve emoji ornaments", () => {
+    assert.deepEqual(normalizeChapterSettings({}).sceneSeparator, {
+        preset: "line",
+        custom: "◆◆◆",
+        color: "#536b45",
+        thickness: 2,
+    });
+    assert.deepEqual(normalizeSceneSeparator({
+        preset: "dotted",
+        custom: "🌙  🌙  🌙",
+        color: "#123abc",
+        thickness: 20,
+    }), {
+        preset: "dotted",
+        custom: "🌙  🌙  🌙",
+        color: "#123abc",
+        thickness: 8,
+    });
+});
+
+test("legacy scene breaks inherit the saved chapter default without changing styled breaks", () => {
+    const content = sceneBreakContentWithDefaults({
+        type: "doc",
+        content: [
+            { type: "horizontalRule" },
+            { type: "horizontalRule", attrs: { preset: "dotted", color: "#123abc", thickness: 4 } },
+        ],
+    }, { sceneSeparator: { preset: "fleuron", color: "#654321", thickness: 3 } });
+
+    assert.equal(content.content[0].attrs.preset, "fleuron");
+    assert.equal(content.content[0].attrs.color, "#654321");
+    assert.equal(content.content[1].attrs.preset, "dotted");
+    assert.equal(content.content[1].attrs.color, "#123abc");
+    assert.equal(content.content[1].attrs.thickness, 4);
+});
+
+test("opening text migrates legacy em sizes and preserves toolbar pixel sizes", () => {
+    assert.equal(normalizeChapterSettings({ opening: { fontSize: 3.4 } }).opening.fontSize, 57.8);
+    assert.equal(normalizeChapterSettings({
+        opening: { fontSize: 8, fontSizeUnit: "px" },
+    }).opening.fontSize, 8);
 });
 
 test("typing @ exposes and inserts the chapter number variable", () => {

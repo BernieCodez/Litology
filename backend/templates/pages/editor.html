@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1/css/all.min.css">
-    <link rel="stylesheet" href="/static/css/editor.css?v=20260808-10">
+    <link rel="stylesheet" href="/static/css/editor.css?v=20260808-18">
 </head>
 <body data-project-id="{{ project_id }}" data-chapter-number="1">
     <a class="skip-link" href="#writing-area">Skip to editor</a>
@@ -48,6 +48,12 @@
                     aria-label="Edit chapter template" title="Edit chapter template">
                 <i class="fa-solid fa-file-pen" aria-hidden="true"></i>
                 <span>Edit chapter template</span>
+            </button>
+            <button class="header-settings-button chapter-style-settings-button" type="button" data-book-only
+                    data-open-chapter-settings aria-haspopup="dialog" aria-label="Open chapter settings"
+                    title="Opening text and scene divider settings">
+                <i class="fa-solid fa-gear" aria-hidden="true"></i>
+                <span>Chapter settings</span>
             </button>
             <button class="secondary-button" type="button">
                 <span aria-hidden="true">↶</span> Version history
@@ -131,7 +137,7 @@
                 </div>
 
                 <div class="tool-group">
-                    <label class="toolbar-select-control block-style-control" title="Paragraph style">
+                    <label class="toolbar-select-control block-style-control" title="Paragraph style (Ctrl+Alt+0–4)">
                         <i class="fa-solid fa-paragraph" aria-hidden="true"></i>
                         <select class="select-tool block-style-select" aria-label="Paragraph style" data-block-style>
                             <option value="h1">H1</option>
@@ -139,6 +145,7 @@
                             <option value="h3">H3</option>
                             <option value="h4">H4</option>
                             <option value="normal">Normal</option>
+                            <option value="opening">Opening text</option>
                         </select>
                     </label>
                 </div>
@@ -159,7 +166,8 @@
                     </label>
                     <div class="font-size-picker" data-font-size-picker>
                         <button class="font-size-step" type="button" aria-label="Decrease font size"
-                                title="Decrease font size" data-font-size-decrease>
+                                title="Decrease font size" data-font-size-decrease
+                                data-shortcut-action="fontSizeDecrease">
                             <i class="fa-solid fa-minus" aria-hidden="true"></i>
                         </button>
                         <input class="font-size-input" id="font-size-input" type="text" value="12"
@@ -168,7 +176,8 @@
                                aria-controls="font-size-menu" aria-expanded="false"
                                aria-autocomplete="list" data-font-size-input>
                         <button class="font-size-step" type="button" aria-label="Increase font size"
-                                title="Increase font size" data-font-size-increase>
+                                title="Increase font size" data-font-size-increase
+                                data-shortcut-action="fontSizeIncrease">
                             <i class="fa-solid fa-plus" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -177,17 +186,17 @@
                 <span class="toolbar-divider"></span>
 
                 <div class="tool-group">
-                    <button class="format-button history-button" type="button" aria-label="Undo" title="Undo" data-command="undo"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
-                    <button class="format-button history-button" type="button" aria-label="Redo" title="Redo" data-command="redo"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+                    <button class="format-button history-button" type="button" aria-label="Undo" title="Undo" data-command="undo" data-shortcut-action="undo"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+                    <button class="format-button history-button" type="button" aria-label="Redo" title="Redo" data-command="redo" data-shortcut-action="redo"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
                 </div>
 
                 <span class="toolbar-divider"></span>
 
                 <div class="tool-group">
-                    <button class="format-button" type="button" aria-label="Bold" title="Bold" data-command="bold"><i class="fa-solid fa-bold" aria-hidden="true"></i></button>
-                    <button class="format-button" type="button" aria-label="Italic" title="Italic" data-command="italic"><i class="fa-solid fa-italic" aria-hidden="true"></i></button>
-                    <button class="format-button" type="button" aria-label="Underline" title="Underline" data-command="underline"><i class="fa-solid fa-underline" aria-hidden="true"></i></button>
-                    <button class="format-button" type="button" aria-label="Strikethrough" title="Strikethrough" data-command="strikethrough"><i class="fa-solid fa-strikethrough" aria-hidden="true"></i></button>
+                    <button class="format-button" type="button" aria-label="Bold" title="Bold" data-command="bold" data-shortcut-action="bold"><i class="fa-solid fa-bold" aria-hidden="true"></i></button>
+                    <button class="format-button" type="button" aria-label="Italic" title="Italic" data-command="italic" data-shortcut-action="italic"><i class="fa-solid fa-italic" aria-hidden="true"></i></button>
+                    <button class="format-button" type="button" aria-label="Underline" title="Underline" data-command="underline" data-shortcut-action="underline"><i class="fa-solid fa-underline" aria-hidden="true"></i></button>
+                    <button class="format-button" type="button" aria-label="Strikethrough" title="Strikethrough" data-command="strikethrough" data-shortcut-action="strikethrough"><i class="fa-solid fa-strikethrough" aria-hidden="true"></i></button>
                     <span class="toolbar-color-picker" data-color-picker data-color-picker-label="Font color">
                         <button class="format-button color-button" type="button" aria-label="Font color" title="Font color" data-color-picker-trigger>
                             <i class="fa-solid fa-palette" aria-hidden="true"></i><span data-font-color-swatch data-color-swatch></span>
@@ -205,7 +214,7 @@
                 <span class="toolbar-divider"></span>
 
                 <div class="tool-group">
-                    <label class="toolbar-select-control alignment-control" title="Alignment and indentation">
+                    <label class="toolbar-select-control alignment-control" title="Alignment (Ctrl+Shift+L/E/R/J); indentation (Ctrl+[ or Ctrl+])">
                         <i class="fa-solid fa-align-left" aria-hidden="true" data-alignment-icon></i>
                         <select class="select-tool alignment-select" aria-label="Alignment and indentation"
                                 data-alignment-menu>
@@ -228,8 +237,13 @@
                             <option value="2">2.0</option>
                         </select>
                     </label>
-                    <button class="format-button list-button" type="button" aria-label="Bulleted list" title="Bulleted list" data-command="bulletList"><i class="fa-solid fa-list-ul" aria-hidden="true"></i></button>
-                    <button class="format-button list-button" type="button" aria-label="Numbered list" title="Numbered list" data-command="orderedList"><i class="fa-solid fa-list-ol" aria-hidden="true"></i></button>
+                    <button class="format-button list-button" type="button" aria-label="Bulleted list" title="Bulleted list" data-command="bulletList" data-shortcut-action="bulletList"><i class="fa-solid fa-list-ul" aria-hidden="true"></i></button>
+                    <button class="format-button list-button" type="button" aria-label="Numbered list" title="Numbered list" data-command="orderedList" data-shortcut-action="orderedList"><i class="fa-solid fa-list-ol" aria-hidden="true"></i></button>
+                    <button class="format-button scene-break-insert-button" type="button"
+                            aria-label="Insert scene break" title="Insert scene break"
+                            data-insert-scene-break>
+                        <i class="fa-solid fa-grip-lines" aria-hidden="true"></i>
+                    </button>
                 </div>
 
                 <div class="toolbar-spacer"></div>
@@ -268,8 +282,31 @@
                 </div>
                 <div class="status-group">
                     <button type="button">Focus mode</button>
-                    <i></i>
-                    <button type="button">100% <span aria-hidden="true">⌄</span></button>
+                    <i aria-hidden="true"></i>
+                    <div class="zoom-control" data-zoom-control role="group" aria-label="Document zoom">
+                        <button class="zoom-step" type="button" data-zoom-out
+                                aria-label="Zoom out" title="Zoom out (Ctrl+-)">−</button>
+                        <button class="zoom-trigger" type="button" data-zoom-trigger
+                                aria-haspopup="menu" aria-expanded="false" title="Change document zoom">
+                            <span data-zoom-value>100%</span>
+                            <span class="zoom-chevron" aria-hidden="true">⌄</span>
+                        </button>
+                        <button class="zoom-step" type="button" data-zoom-in
+                                aria-label="Zoom in" title="Zoom in (Ctrl++)">+</button>
+                        <div class="zoom-menu" data-zoom-menu role="menu" aria-label="Zoom level" hidden>
+                            <button type="button" role="menuitemradio" data-zoom-level="50">50%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="67">67%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="75">75%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="80">80%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="90">90%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="100">100%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="110">110%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="125">125%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="150">150%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="175">175%</button>
+                            <button type="button" role="menuitemradio" data-zoom-level="200">200%</button>
+                        </div>
+                    </div>
                 </div>
             </footer>
 
@@ -527,6 +564,98 @@
         </aside>
     </div>
 
+    <div class="chapter-settings-backdrop" data-chapter-settings-backdrop hidden></div>
+    <section class="chapter-settings-dialog" role="dialog" aria-modal="true"
+             aria-labelledby="chapter-settings-title" data-chapter-settings-dialog hidden>
+        <header class="chapter-settings-header">
+            <div>
+                <span class="eyebrow">Chapter style</span>
+                <h2 id="chapter-settings-title">Opening text &amp; scene dividers</h2>
+                <p>Set the details Litology applies consistently across this book.</p>
+            </div>
+            <button class="icon-button" type="button" aria-label="Close chapter settings"
+                    data-close-chapter-settings>&times;</button>
+        </header>
+
+        <div class="chapter-settings-body">
+            <section class="chapter-settings-card opening-text-settings" aria-labelledby="opening-text-style-title">
+                <div class="chapter-settings-card-heading">
+                    <div>
+                        <span class="settings-step">Automation</span>
+                        <h3 id="opening-text-style-title">Opening text</h3>
+                        <p>Choose what Litology treats as opening text. Its appearance is controlled by the Opening text style in the editor toolbar.</p>
+                    </div>
+                    <label class="settings-switch">
+                        <input type="checkbox" data-opening-enabled>
+                        <span aria-hidden="true"></span>
+                        <strong>Enabled</strong>
+                    </label>
+                </div>
+
+                <fieldset class="settings-fieldset" data-opening-controls>
+                    <legend>Apply the style to</legend>
+                    <div class="settings-choice-grid opening-scope-choices" data-opening-mode>
+                        <button type="button" data-value="character">First letter</button>
+                        <button type="button" data-value="word">First whole word</button>
+                        <button type="button" data-value="sentence">First sentence</button>
+                    </div>
+                </fieldset>
+
+                <fieldset class="settings-fieldset" data-opening-controls>
+                    <legend>Placement</legend>
+                    <div class="settings-choice-grid opening-placement-choices" data-opening-layout>
+                        <button type="button" data-value="drop">Drop cap</button>
+                        <button type="button" data-value="raised">Raised</button>
+                        <button type="button" data-value="inline">Inline</button>
+                    </div>
+                </fieldset>
+
+                <p class="opening-style-help">
+                    To change its appearance, select <strong>Opening text</strong> in the toolbar, format it, then right-click and choose <strong>Update text style to match</strong>.
+                </p>
+            </section>
+
+            <section class="chapter-settings-card scene-divider-settings" aria-labelledby="scene-divider-title">
+                <div class="chapter-settings-card-heading">
+                    <div>
+                        <span class="settings-step">Ornament</span>
+                        <h3 id="scene-divider-title">Scene divider</h3>
+                        <p>Choose the default for newly inserted scene breaks. Existing breaks keep their own style.</p>
+                    </div>
+                </div>
+                <div class="scene-divider-presets settings-scene-presets" data-scene-divider-presets>
+                    <button type="button" data-value="line" aria-label="Straight line preset"><span class="scene-preset-line"></span><small>Straight</small></button>
+                    <button type="button" data-value="squiggle" aria-label="Squiggly line preset"><span class="scene-preset-squiggle"></span><small>Squiggly</small></button>
+                    <button type="button" data-value="dotted" aria-label="Dotted line preset"><span class="scene-preset-line is-dotted"></span><small>Dotted</small></button>
+                    <button type="button" data-value="dashed" aria-label="Dashed line preset"><span class="scene-preset-line is-dashed"></span><small>Dashed</small></button>
+                    <button type="button" data-value="double" aria-label="Double line preset"><span class="scene-preset-line is-double"></span><small>Double</small></button>
+                    <button type="button" data-value="diamonds" aria-label="Diamonds preset"><span>◆◆◆</span><small>Diamonds</small></button>
+                    <button type="button" data-value="custom" class="scene-custom-choice"><i class="fa-solid fa-pen" aria-hidden="true"></i> Create your own</button>
+                </div>
+                <label class="settings-field custom-divider-field" data-custom-divider-field hidden>
+                    <span>Your divider</span>
+                    <input type="text" maxlength="48" autocomplete="off" placeholder="◆◆◆" data-custom-scene-divider>
+                    <small>Up to 24 symbols. Emoji and spaces are welcome.</small>
+                </label>
+                <div class="scene-break-preview" data-scene-break-preview aria-label="Default scene break preview"></div>
+                <p class="scene-break-toolbar-help">
+                    Select a scene break in the manuscript, then use the toolbar color and size controls to change its color and thickness.
+                </p>
+            </section>
+
+        </div>
+
+        <footer class="chapter-settings-footer">
+            <p>These settings apply to every existing and future chapter.</p>
+            <div>
+                <button class="chapter-settings-cancel" type="button" data-cancel-chapter-settings>Cancel</button>
+                <button class="chapter-settings-save" type="button" data-save-chapter-settings>
+                    <i class="fa-solid fa-check" aria-hidden="true"></i> Save settings
+                </button>
+            </div>
+        </footer>
+    </section>
+
     <div class="font-library-backdrop" data-font-library-backdrop hidden></div>
     <section class="font-library-dialog" role="dialog" aria-modal="true"
              aria-labelledby="font-library-title" data-font-library hidden>
@@ -608,6 +737,24 @@
         </div>
     </div>
 
+    <div class="scene-break-popover" data-scene-break-popover hidden role="dialog"
+         aria-label="Choose scene break preset">
+        <header>
+            <div><small>Scene break</small><strong>Choose a style</strong></div>
+            <button type="button" aria-label="Close scene break settings" data-close-scene-break-popover>&times;</button>
+        </header>
+        <div class="scene-break-popover-presets" data-scene-divider-presets>
+            <button type="button" data-value="line">Straight</button>
+            <button type="button" data-value="squiggle">Squiggly</button>
+            <button type="button" data-value="dotted">Dotted</button>
+            <button type="button" data-value="dashed">Dashed</button>
+            <button type="button" data-value="double">Double</button>
+            <button type="button" data-value="diamonds">◆◆◆</button>
+            <button type="button" data-value="custom" data-custom-scene-preset>Custom</button>
+        </div>
+        <p>Use the toolbar for color and thickness. Custom dividers live in Chapter Settings.</p>
+    </div>
+
     <div class="chapter-variable-menu" role="listbox" aria-label="Template variables"
          data-chapter-variable-menu hidden>
         <button type="button" role="option" data-insert-chapter-variable>
@@ -616,7 +763,7 @@
         </button>
     </div>
 
-    <script type="module" src="/static/js/editor.js?v=20260808-14"></script>
+    <script type="module" src="/static/js/editor.js?v=20260808-23"></script>
     <script type="module" src="/static/js/workspaces.js?v=20260807-4"></script>
 </body>
 </html>

@@ -58,6 +58,21 @@ test("selected text can update its project-wide reusable style", () => {
     assert.match(editorJavaScript, /applyChapterSettings\(chapter\.article, chapter\.settings\)/);
 });
 
+test("color formatting keeps its original text range and exact picker value", () => {
+    assert.match(editorJavaScript, /function rememberColorFormattingSelection/);
+    assert.match(editorJavaScript, /function restoreColorFormattingSelection/);
+    assert.match(editorJavaScript, /TextSelection\.create\(editor\.state\.doc, saved\.from, saved\.to\)/);
+    assert.match(editorJavaScript, /const color = highlightColorControl\.value;/);
+    assert.match(editorJavaScript, /setBackgroundColor\(color\)/);
+    assert.match(editorJavaScript, /setColorPickerValue\(highlightColorControl, color\)/);
+});
+
+test("temporary toolbar formatting visibly overrides the generated opening text style", () => {
+    assert.match(editorJavaScript, /function openingRangeHasStyleOverride/);
+    assert.match(editorJavaScript, /chapter-opening-text has-style-override/);
+    assert.match(editorCss, /\.chapter-opening-text:not\(\.has-style-override\)/);
+});
+
 test("the block style dropdown previews each reusable text style", () => {
     assert.match(editorJavaScript, /function syncBlockStylePreviews/);
     assert.match(editorJavaScript, /option\.dataset\.previewColor = style\.color/);

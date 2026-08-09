@@ -92,6 +92,7 @@ function closePicker(state, { restoreFocus = false } = {}) {
     state.trigger.setAttribute("aria-expanded", "false");
     state.wrapper.classList.remove("is-open");
     if (openState === state) openState = null;
+    state.wrapper.dispatchEvent(new CustomEvent("color-picker-close", { bubbles: true }));
     if (restoreFocus) state.trigger.focus();
 }
 
@@ -130,6 +131,7 @@ function syncDisabled(state) {
 
 function openPicker(state) {
     if (openState && openState !== state) closePicker(openState);
+    state.wrapper.dispatchEvent(new CustomEvent("color-picker-open", { bubbles: true }));
     state.menu.hidden = false;
     state.trigger.setAttribute("aria-expanded", "true");
     state.wrapper.classList.add("is-open");
@@ -195,6 +197,10 @@ export function enhanceColorPicker(wrapper) {
         });
     };
     state.wheel.addEventListener("pointerdown", (event) => {
+        // Owning the pointer is not enough to suppress the browser's native
+        // selection gesture. Without this, dragging beyond the wheel can
+        // replace a text selection in the editor underneath the picker.
+        event.preventDefault();
         state.wheel.setPointerCapture(event.pointerId);
         chooseFromWheel(event);
     });
