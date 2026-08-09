@@ -270,8 +270,7 @@ textarea:focus-visible {
 }
 
 .project-menu {
-    font-size: 12px;
-    letter-spacing: 2px;
+    font-size: 15px;
 }
 
 .save-state {
@@ -437,122 +436,9 @@ textarea:focus-visible {
 .section-icon {
     width: 22px;
     height: 22px;
-    display: inline-block;
-    position: relative;
-}
-
-.book-icon::before,
-.book-icon::after {
-    content: "";
-    position: absolute;
-    top: 3px;
-    width: 8px;
-    height: 15px;
-    border: 1.5px solid currentColor;
-}
-
-.book-icon::before {
-    left: 2px;
-    border-radius: 3px 0 0 3px;
-}
-
-.book-icon::after {
-    right: 2px;
-    border-radius: 0 3px 3px 0;
-}
-
-.plot-icon::before {
-    content: "";
-    position: absolute;
-    inset: 3px 2px 4px 3px;
-    border-left: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: skew(-18deg);
-}
-
-.plot-icon::after {
-    content: "";
-    position: absolute;
-    width: 5px;
-    height: 5px;
-    top: 3px;
-    right: 1px;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: -7px 6px 0 currentColor, -13px 12px 0 currentColor;
-}
-
-.characters-icon::before,
-.characters-icon::after {
-    content: "";
-    position: absolute;
-    border: 1.5px solid currentColor;
-    border-radius: 50%;
-}
-
-.characters-icon::before {
-    width: 8px;
-    height: 8px;
-    top: 1px;
-    left: 7px;
-}
-
-.characters-icon::after {
-    width: 17px;
-    height: 10px;
-    bottom: 1px;
-    left: 2px;
-    border-radius: 10px 10px 4px 4px;
-}
-
-.settings-icon::before {
-    content: "";
-    position: absolute;
-    width: 14px;
-    height: 17px;
-    top: 1px;
-    left: 4px;
-    border: 1.5px solid currentColor;
-    border-radius: 10px 10px 10px 3px;
-}
-
-.settings-icon::after {
-    content: "";
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    top: 7px;
-    left: 9px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-.timeline-icon::before {
-    content: "";
-    position: absolute;
-    top: 1px;
-    bottom: 1px;
-    left: 10px;
-    width: 1.5px;
-    background: currentColor;
-}
-
-.timeline-icon::after {
-    content: "";
-    position: absolute;
-    width: 7px;
-    height: 7px;
-    top: 1px;
-    left: 7px;
-    border: 1.5px solid currentColor;
-    border-radius: 50%;
-    box-shadow: 0 11px 0 -1px var(--paper), 0 11px 0 0 currentColor;
-}
-
-.miscellaneous-icon {
-    display: grid;
+    display: inline-grid;
     place-items: center;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .empty-chapter-list {
@@ -1824,9 +1710,240 @@ select.select-tool {
     text-overflow: ellipsis;
 }
 
-.assistant-tool > span:last-child {
+.assistant-tool > i:last-child {
     color: var(--stone);
-    font-size: 18px;
+    font-size: 11px;
+}
+
+/* Dictionary & thesaurus */
+.dictionary-panel {
+    min-height: 100%;
+    animation: grammar-panel-enter 180ms ease-out;
+}
+
+.dictionary-panel-header h3 {
+    margin: 5px 0 6px;
+    font: 600 22px/1.15 var(--serif);
+}
+
+.dictionary-panel-header p {
+    margin: 0 0 16px;
+    color: var(--stone);
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.dictionary-search {
+    height: 45px;
+    padding: 0 6px 0 13px;
+    border: 1px solid rgba(83, 107, 69, 0.26);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 33px;
+    align-items: center;
+    gap: 9px;
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-sm);
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.dictionary-search:focus-within {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(83, 107, 69, 0.1), var(--shadow-sm);
+}
+
+.dictionary-search > i { color: var(--stone); font-size: 11px; }
+
+.dictionary-search input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    color: var(--ink);
+    background: transparent;
+    font: 500 11px/1 var(--sans);
+}
+
+.dictionary-search input::placeholder { color: #99938c; }
+
+.dictionary-search button,
+.dictionary-audio-button {
+    width: 33px;
+    height: 33px;
+    border: 0;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    color: var(--paper);
+    background: var(--moss);
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.dictionary-search button:hover,
+.dictionary-audio-button:hover { background: #445b38; }
+
+.dictionary-status {
+    min-height: 27px;
+    padding: 9px 2px 6px;
+    color: var(--stone);
+    font-size: 8px;
+    line-height: 1.4;
+}
+
+.dictionary-status:empty { min-height: 14px; padding: 0; }
+.dictionary-status[data-state="error"] { color: #a14d45; }
+
+.dictionary-status[data-state="loading"]::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border: 1.5px solid rgba(217, 130, 91, 0.26);
+    border-top-color: var(--terracotta);
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: -1px;
+    animation: grammar-spinner 650ms linear infinite;
+}
+
+.dictionary-results.is-loading { opacity: .52; pointer-events: none; }
+
+.dictionary-empty-state,
+.dictionary-not-found {
+    min-height: 245px;
+    padding: 28px 16px;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    text-align: center;
+}
+
+.dictionary-empty-state > span,
+.dictionary-not-found > span {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 13px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    color: #845942;
+    background: rgba(242, 208, 164, 0.5);
+    font-size: 16px;
+    transform: rotate(-2deg);
+}
+
+.dictionary-empty-state > strong,
+.dictionary-not-found > strong { font: 600 16px/1.2 var(--serif); }
+
+.dictionary-empty-state > p,
+.dictionary-not-found > p {
+    max-width: 220px;
+    margin: 7px 0 14px;
+    color: var(--stone);
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+.dictionary-empty-state > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+
+.dictionary-empty-state > div button,
+.dictionary-term-section button {
+    min-height: 27px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--moss);
+    background: rgba(255, 252, 245, 0.72);
+    cursor: pointer;
+    font-size: 8px;
+    font-weight: 650;
+}
+
+.dictionary-empty-state > div button:hover,
+.dictionary-term-section button:hover {
+    border-color: rgba(83, 107, 69, 0.35);
+    background: var(--surface-raised);
+}
+
+.dictionary-entry > header {
+    padding: 15px 1px 17px;
+    border-bottom: 1px solid var(--soft-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dictionary-entry > header > div { min-width: 0; }
+
+.dictionary-entry > header h3 {
+    overflow: hidden;
+    margin: 0;
+    font: 600 27px/1.1 var(--serif);
+    text-overflow: ellipsis;
+}
+
+.dictionary-entry > header span {
+    margin-top: 5px;
+    display: block;
+    color: var(--terracotta);
+    font: 500 9px/1.2 var(--sans);
+}
+
+.dictionary-audio-button { flex: 0 0 auto; background: var(--terracotta); }
+
+.dictionary-meaning {
+    padding: 17px 0 2px;
+    border-bottom: 1px solid var(--soft-line);
+}
+
+.dictionary-meaning h4,
+.dictionary-term-section h4 {
+    margin: 0 0 11px;
+    color: var(--terracotta);
+    font: italic 600 11px/1.2 var(--serif);
+    text-transform: lowercase;
+}
+
+.dictionary-meaning ol {
+    margin: 0;
+    padding: 0 0 0 22px;
+}
+
+.dictionary-meaning li {
+    margin-bottom: 14px;
+    padding-left: 4px;
+    color: var(--stone);
+    font: 500 9px/1.55 var(--sans);
+}
+
+.dictionary-meaning li::marker { color: var(--terracotta); font-weight: 700; }
+.dictionary-meaning li p { margin: 0; color: var(--ink); }
+
+.dictionary-meaning blockquote {
+    margin: 6px 0 0;
+    padding-left: 9px;
+    border-left: 2px solid var(--sage);
+    color: var(--stone);
+    font: italic 9px/1.5 var(--serif);
+}
+
+.dictionary-term-section {
+    padding: 17px 0 1px;
+    border-bottom: 1px solid var(--soft-line);
+}
+
+.dictionary-term-section > div {
+    margin-bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 /* Grammar checker */
@@ -3336,7 +3453,9 @@ select.select-tool {
 }
 
 .custom-select-option[aria-selected="true"]::after {
-    content: "✓";
+    content: "\f00c";
+    font-family: "Font Awesome 7 Free";
+    font-weight: 900;
     position: absolute;
     top: 50%;
     right: 10px;
@@ -3702,7 +3821,7 @@ select.select-tool {
 
     .sidebar-header > div,
     .sidebar-header .icon-button,
-    .section-button > span:not(.section-icon),
+    .section-button > :not(.section-icon),
     .empty-chapter-list,
     .add-section-button,
     .sidebar-footer > div:not(.goal-ring),
@@ -3915,8 +4034,13 @@ select.select-tool {
     box-shadow: none;
 }
 
-.tiptap p {
-    margin: 0 0 1.15em;
+.tiptap p,
+.tiptap h1,
+.tiptap h2,
+.tiptap h3,
+.tiptap h4,
+.tiptap h5 {
+    margin: 0 0 12px;
 }
 
 .tiptap h1,
@@ -3930,7 +4054,6 @@ select.select-tool {
 }
 
 .tiptap h1 {
-    margin: 0 0 1.2em;
     padding-bottom: 0;
     border-bottom: 0;
     font-size: clamp(36px, 4.5vw, 48px);
@@ -3938,14 +4061,12 @@ select.select-tool {
 }
 
 .tiptap h2 {
-    margin: 1.9em 0 0.65em;
     color: var(--moss);
     font-size: 30px;
     line-height: 1.18;
 }
 
 .tiptap h3 {
-    margin: 1.6em 0 0.55em;
     font-size: 22px;
     line-height: 1.25;
 }
@@ -3958,7 +4079,21 @@ select.select-tool {
 }
 
 .tiptap strong {
-    font-weight: 600;
+    font-weight: 700;
+}
+
+.tiptap [data-bold-override="off"] {
+    font-weight: 400;
+}
+
+.tiptap [data-italic-override="off"] {
+    font-style: normal;
+}
+
+.tiptap [data-underline-override="off"],
+.tiptap [data-strike-override="off"] {
+    display: inline-block;
+    text-decoration: none;
 }
 
 .tiptap blockquote {
@@ -4147,7 +4282,6 @@ select.select-tool {
 }
 
 .chapter-section .tiptap h4 {
-    margin: 1.5em 0 0.55em;
     color: var(--chapter-h4-color);
     font-family: var(--chapter-h4-family);
     font-size: var(--chapter-h4-size);
@@ -4159,7 +4293,6 @@ select.select-tool {
 }
 
 .chapter-section .tiptap h5 {
-    margin: 1.35em 0 0.5em;
     color: var(--chapter-h4-color);
     font-family: var(--chapter-h4-family);
     font-size: var(--chapter-h4-size);
@@ -4172,9 +4305,9 @@ select.select-tool {
 
 .chapter-section .tiptap hr {
     width: 100%;
-    height: 44px;
-    min-height: 44px;
-    margin: 2.25em auto;
+    height: 24px;
+    min-height: 24px;
+    margin: 8px auto;
     border: 0;
     display: grid;
     place-items: center;
@@ -4239,9 +4372,11 @@ select.select-tool {
 }
 
 .chapter-section .tiptap hr.ProseMirror-selectednode {
-    border-radius: 8px;
-    outline: 2px solid rgba(217, 130, 91, 0.48);
-    outline-offset: 4px;
+    border-radius: 2px;
+    outline: none;
+    color: var(--ink);
+    background: rgba(200, 214, 175, 0.72);
+    --scene-break-color: var(--ink) !important;
 }
 
 .chapter-opening-text {

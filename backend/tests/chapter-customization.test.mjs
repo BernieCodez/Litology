@@ -43,6 +43,25 @@ test("selected inline formatting can update its reusable text style", () => {
     assert.equal(settings.styles.h1.color, DEFAULT_CHAPTER_SETTINGS.styles.h1.color);
 });
 
+test("explicit off overrides can remove inherited reusable formatting", () => {
+    const settings = settingsWithMatchedTextStyle(
+        { styles: { normal: { bold: true, italic: true, underline: true } } },
+        "normal",
+        {
+            textStyle: {
+                boldOverride: "off",
+                italicOverride: "off",
+                underlineOverride: "off",
+            },
+            marks: [],
+        },
+    );
+
+    assert.equal(settings.styles.normal.bold, false);
+    assert.equal(settings.styles.normal.italic, false);
+    assert.equal(settings.styles.normal.underline, false);
+});
+
 test("selected opening text can update the reusable opening text style", () => {
     const settings = settingsWithMatchedTextStyle(DEFAULT_CHAPTER_SETTINGS, "opening", {
         textStyle: { color: "#536b45", fontFamily: "Georgia", fontSize: "52px" },

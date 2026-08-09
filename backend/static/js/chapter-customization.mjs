@@ -10,6 +10,7 @@ export const STYLE_DEFINITIONS = [
 const BLOCK_STYLE_DEFINITIONS = STYLE_DEFINITIONS.filter(({ node }) => node !== "opening");
 
 export const FONT_OPTIONS = ["Playfair Display", "Inter", "Georgia", "Arial", "Courier New"];
+export const OPTIONAL_LOCAL_FONT_OPTIONS = ["Times New Roman"];
 
 export const SCENE_SEPARATOR_PRESETS = {
     line: "",
@@ -310,6 +311,11 @@ export function settingsWithMatchedTextStyle(value, styleKey, selection = {}) {
     const marks = new Set(Array.isArray(selection.marks) ? selection.marks : []);
     const parsedFontSize = Number.parseFloat(textStyle.fontSize);
     const exactOpeningMarks = isOpeningText && selection.explicitFormatting === true;
+    const matchedFormatting = (property, markName) => {
+        if (textStyle[`${property}Override`] === "off") return false;
+        if (marks.has(markName)) return true;
+        return exactOpeningMarks ? false : current[property];
+    };
     const matchedStyle = {
         ...current,
         fontFamily: textStyle.fontFamily || current.fontFamily,
@@ -319,9 +325,9 @@ export function settingsWithMatchedTextStyle(value, styleKey, selection = {}) {
             alignment: block.textAlign || current.alignment,
             lineHeight: Number(textStyle.lineHeight) || current.lineHeight,
         }),
-        bold: exactOpeningMarks ? marks.has("bold") : marks.has("bold") || current.bold,
-        italic: exactOpeningMarks ? marks.has("italic") : marks.has("italic") || current.italic,
-        underline: exactOpeningMarks ? marks.has("underline") : marks.has("underline") || current.underline,
+        bold: matchedFormatting("bold", "bold"),
+        italic: matchedFormatting("italic", "italic"),
+        underline: matchedFormatting("underline", "underline"),
     };
     if (isOpeningText) settings.opening = matchedStyle;
     else settings.styles[styleKey] = matchedStyle;

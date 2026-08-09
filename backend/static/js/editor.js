@@ -14,13 +14,14 @@ import {
     normalizeChapterSettings,
     normalizeSceneSeparator,
     openingTextRange,
+    OPTIONAL_LOCAL_FONT_OPTIONS,
     sceneBreakAttributes,
     sceneBreakContentWithDefaults,
     sceneSeparatorSymbol,
     STYLE_DEFINITIONS,
     settingsWithMatchedTextStyle,
     styleKeyForAttributes,
-} from "/static/js/chapter-customization.mjs?v=20260808-7";
+} from "/static/js/chapter-customization.mjs?v=20260808-8";
 import {
     enhanceColorPickers,
     setColorPickerValue,
@@ -34,9 +35,11 @@ import {
     googleFontPreviewStylesheetUrl,
     googleFontStylesheetUrl,
     isBuiltInFont,
+    isOptionalLocalFont,
+    loadLocalFont,
     loadImportedFonts,
     saveImportedFonts,
-} from "/static/js/font-library.mjs?v=20260807-2";
+} from "/static/js/font-library.mjs?v=20260808-3";
 import {
     FONT_SIZE_PRESETS,
     formatFontSize,
@@ -44,6 +47,11 @@ import {
     parseFontSize,
     stepFontSize,
 } from "/static/js/font-size-picker.mjs";
+import {
+    effectiveFormatIsActive,
+    inheritedFormatIsActive,
+    INLINE_FORMATS,
+} from "/static/js/formatting-overrides.mjs?v=20260808-1";
 import {
     createGoogleDocsShortcutMap,
     shortcutLabel,
@@ -73,10 +81,9 @@ import {
     saveProjectNames,
 } from "/static/js/project-names.mjs";
 import {
-    fetchContextualSynonyms,
     isSingleSelectedWord,
-    neighboringWords,
 } from "/static/js/synonyms.mjs?v=20260808-2";
+import { fetchDictionaryEntry } from "/static/js/dictionary.mjs?v=20260809-1";
 
 const AUTOSAVE_DELAY = 1200;
 const projectId = document.body.dataset.projectId;
@@ -162,6 +169,14 @@ const zoomLevelButtons = [...document.querySelectorAll("[data-zoom-level]")];
 const sidebarWordCount = document.querySelector(".sidebar-footer strong");
 const assistantHome = document.querySelector("[data-assistant-home]");
 const assistantTabs = [...document.querySelectorAll(".assistant-tabs button")];
+const openDictionaryButton = document.querySelector("[data-open-dictionary]");
+const dictionaryPanel = document.querySelector("[data-dictionary-panel]");
+const closeDictionaryButton = document.querySelector("[data-close-dictionary]");
+const dictionaryForm = document.querySelector("[data-dictionary-form]");
+const dictionaryInput = document.querySelector("[data-dictionary-input]");
+const dictionaryStatus = document.querySelector("[data-dictionary-status]");
+const dictionaryResults = document.querySelector("[data-dictionary-results]");
+const dictionaryExampleButtons = [...document.querySelectorAll("[data-dictionary-example]")];
 const openGrammarButton = document.querySelector("[data-open-grammar]");
 const grammarPanel = document.querySelector("[data-grammar-panel]");
 const closeGrammarButton = document.querySelector("[data-close-grammar]");
@@ -181,6 +196,7 @@ const grammarAcceptButton = document.querySelector("[data-grammar-accept]");
 const grammarDismissButton = document.querySelector("[data-grammar-dismiss]");
 const selectionPopover = document.querySelector("[data-selection-popover]");
 const selectionActions = document.querySelector("[data-selection-actions]");
+const selectionDefineButton = document.querySelector("[data-selection-define]");
 const selectionSynonymsButton = document.querySelector("[data-selection-synonyms]");
 const selectionUpdateStyleButton = document.querySelector("[data-selection-update-style]");
 const synonymView = document.querySelector("[data-synonym-view]");
@@ -198,6 +214,7 @@ const fontSelects = [
 ];
 const chapterStates = [];
 let importedFonts = loadImportedFonts();
+const availableLocalFonts = new Set();
 let googleFontCatalog = null;
 let googleFontCatalogPromise = null;
 let grammarSyncFrame = null;
@@ -209,6 +226,7 @@ let grammarDictionaryStatus = "loading";
 let activeTextSelection = null;
 let activeColorFormattingSelection = null;
 let synonymRequestController = null;
+let dictionaryRequestController = null;
 let selectionPopoverAnimationTimeout = null;
 let fontSearchTimer = null;
 let fontLibraryTarget = null;
@@ -316,6 +334,7 @@ function addFontOption(family) {
 
 function registerImportedFont(family, { persist = true } = {}) {
     if (!family) return;
+    if (isOptionalLocalFont(family) && !availableLocalFonts.has(family)) return;
     ensureGoogleFontLoaded(family);
     addFontOption(family);
     if (!isBuiltInFont(family) && !importedFonts.includes(family)) {
@@ -333,6 +352,22 @@ importedFonts.forEach((family) => registerImportedFont(family, { persist: false 
 enhanceAllSelects();
 enhanceColorPickers();
 
+async function loadOptionalLocalFonts() {
+    const availability = await Promise.all(OPTIONAL_LOCAL_FONT_OPTIONS.map(async (family) => ({
+        family,
+        supported: await loadLocalFont(family),
+    })));
+
+    availability.forEach(({ family, supported }) => {
+        if (!supported) return;
+        availableLocalFonts.add(family);
+        addFontOption(family);
+    });
+    syncToolbar();
+}
+
+void loadOptionalLocalFonts();
+
 const commandMap = {
     bold: { command: "toggleBold", active: "bold" },
     italic: { command: "toggleItalic", active: "italic" },
@@ -344,6 +379,54 @@ const commandMap = {
     redo: { command: "redo", history: true },
 };
 
+function inheritedFormattingState(editor, format) {
+    if (!editor) return false;
+    const styleKey = activeReusableStyleKey(activeChapter);
+    return inheritedFormatIsActive(reusableStyleSettings(activeChapter, styleKey), format);
+}
+
+function effectiveFormattingState(editor, format) {
+    const config = INLINE_FORMATS[format];
+    if (!editor || !config) return false;
+    const textStyle = editor.getAttributes("textStyle") || {};
+    return effectiveFormatIsActive({
+        inherited: inheritedFormattingState(editor, format),
+        marked: editor.isActive(format),
+        override: textStyle[config.overrideAttribute],
+    });
+}
+
+function toggleInlineFormatting(editor, format) {
+    const config = INLINE_FORMATS[format];
+    if (!editor || !config) return false;
+    const inherited = inheritedFormattingState(editor, format);
+    const textStyle = editor.getAttributes("textStyle") || {};
+    const hasOffOverride = textStyle[config.overrideAttribute] === "off";
+    const isActive = effectiveFormatIsActive({
+        inherited,
+        marked: editor.isActive(format),
+        override: textStyle[config.overrideAttribute],
+    });
+    let chain = editor.chain().focus();
+
+    if (isActive) {
+        chain = chain[config.unsetCommand]();
+        if (inherited) {
+            chain = chain.setMark("textStyle", { [config.overrideAttribute]: "off" });
+        }
+    } else {
+        if (hasOffOverride) {
+            chain = chain.setMark("textStyle", { [config.overrideAttribute]: null });
+        }
+        if (!inherited) {
+            chain = chain[config.setCommand]();
+        }
+    }
+    const didRun = chain.run();
+    syncToolbar();
+    return didRun;
+}
+
 function runToolbarCommand(editor, action) {
     const config = commandMap[action];
     if (!editor || !config || typeof editor.chain().focus()[config.command] !== "function") {
@@ -352,8 +435,36 @@ function runToolbarCommand(editor, action) {
     if (["bold", "italic", "underline"].includes(config.active)) {
         prepareOpeningStyleOverride(editor);
     }
+    if (INLINE_FORMATS[config.active]) {
+        return toggleInlineFormatting(editor, config.active);
+    }
     return editor.chain().focus()[config.command]().run();
 }
+
+const inheritedFormattingOverrideExtension = Extension.create({
+    name: "inheritedFormattingOverrides",
+    addGlobalAttributes() {
+        return [{
+            types: ["textStyle"],
+            attributes: Object.fromEntries(Object.values(INLINE_FORMATS).map((config) => [
+                config.overrideAttribute,
+                {
+                    default: null,
+                    parseHTML: (element) => (
+                        element.getAttribute(config.dataAttribute) === "off"
+                            ? "off"
+                            : null
+                    ),
+                    renderHTML: (attributes) => (
+                        attributes[config.overrideAttribute] === "off"
+                            ? { [config.dataAttribute]: "off" }
+                            : {}
+                    ),
+                },
+            ])),
+        }];
+    },
+});
 
 function changeBlockIndent(editor, direction) {
     if (!editor) return false;
@@ -1391,7 +1502,7 @@ function syncGrammarSidebar() {
         const emptyState = document.createElement("div");
         emptyState.className = "grammar-perfect-state";
         emptyState.innerHTML = `
-            <span aria-hidden="true">✓</span>
+            <span aria-hidden="true"><i class="fa-solid fa-check"></i></span>
             <strong>Looking polished</strong>
             <p>No open spelling, grammar, or clarity suggestions in this chapter.</p>
         `;
@@ -1406,6 +1517,8 @@ function scheduleGrammarSidebarSync() {
 
 function openGrammarPanel({ focusBackButton = true } = {}) {
     assistantHome.hidden = true;
+    dictionaryPanel.hidden = true;
+    dictionaryRequestController?.abort();
     grammarPanel.hidden = false;
     assistantTabs.forEach((tab) => {
         tab.classList.remove("is-active");
@@ -1425,6 +1538,154 @@ function closeGrammarPanel() {
     assistantTabs[0]?.classList.add("is-active");
     assistantTabs[0]?.setAttribute("aria-selected", "true");
     openGrammarButton.focus();
+}
+
+function setDictionaryStatus(message = "", state = "") {
+    dictionaryStatus.textContent = message;
+    dictionaryStatus.dataset.state = state;
+}
+
+function dictionaryTermSection(title, terms) {
+    if (!terms.length) return null;
+    const section = document.createElement("section");
+    section.className = "dictionary-term-section";
+    const heading = document.createElement("h4");
+    heading.textContent = title;
+    const list = document.createElement("div");
+    terms.forEach((term) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = term;
+        button.addEventListener("click", () => {
+            dictionaryInput.value = term;
+            void lookupDictionaryWord(term);
+        });
+        list.append(button);
+    });
+    section.append(heading, list);
+    return section;
+}
+
+function renderDictionaryEntry(entry) {
+    dictionaryResults.replaceChildren();
+    const article = document.createElement("article");
+    article.className = "dictionary-entry";
+    const header = document.createElement("header");
+    const headingGroup = document.createElement("div");
+    const heading = document.createElement("h3");
+    heading.textContent = entry.word;
+    headingGroup.append(heading);
+    if (entry.phonetic) {
+        const phonetic = document.createElement("span");
+        phonetic.textContent = entry.phonetic;
+        headingGroup.append(phonetic);
+    }
+    header.append(headingGroup);
+    if (entry.audio) {
+        const audio = new Audio(entry.audio);
+        const playButton = document.createElement("button");
+        playButton.type = "button";
+        playButton.className = "dictionary-audio-button";
+        playButton.setAttribute("aria-label", `Hear ${entry.word} pronounced`);
+        playButton.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i>';
+        playButton.addEventListener("click", () => void audio.play());
+        header.append(playButton);
+    }
+    article.append(header);
+
+    entry.meanings.forEach((meaning) => {
+        const section = document.createElement("section");
+        section.className = "dictionary-meaning";
+        const label = document.createElement("h4");
+        label.textContent = meaning.partOfSpeech;
+        const list = document.createElement("ol");
+        meaning.definitions.forEach(({ definition, example }) => {
+            const item = document.createElement("li");
+            const text = document.createElement("p");
+            text.textContent = definition;
+            item.append(text);
+            if (example) {
+                const usage = document.createElement("blockquote");
+                usage.textContent = `“${example}”`;
+                item.append(usage);
+            }
+            list.append(item);
+        });
+        section.append(label, list);
+        article.append(section);
+    });
+
+    const synonyms = dictionaryTermSection("Synonyms", entry.synonyms);
+    const antonyms = dictionaryTermSection("Antonyms", entry.antonyms);
+    if (synonyms) article.append(synonyms);
+    if (antonyms) article.append(antonyms);
+    dictionaryResults.append(article);
+}
+
+function renderDictionaryEmpty(word) {
+    dictionaryResults.replaceChildren();
+    const empty = document.createElement("div");
+    empty.className = "dictionary-not-found";
+    empty.innerHTML = `
+        <span aria-hidden="true"><i class="fa-solid fa-feather-pointed"></i></span>
+        <strong>No entry found</strong>
+        <p>We couldn’t find “${word}.” Check the spelling or try another form of the word.</p>
+    `;
+    dictionaryResults.append(empty);
+}
+
+async function lookupDictionaryWord(value = dictionaryInput.value) {
+    dictionaryRequestController?.abort();
+    const controller = new AbortController();
+    dictionaryRequestController = controller;
+    dictionaryResults.classList.add("is-loading");
+    setDictionaryStatus("Looking through the shelves…", "loading");
+    try {
+        const entry = await fetchDictionaryEntry(value, { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        if (entry) {
+            dictionaryInput.value = entry.word;
+            renderDictionaryEntry(entry);
+            setDictionaryStatus(`${entry.meanings.length} ${entry.meanings.length === 1 ? "meaning" : "meanings"} found`, "success");
+        } else {
+            renderDictionaryEmpty(value.trim());
+            setDictionaryStatus("Try a different spelling or word form.", "empty");
+        }
+    } catch (error) {
+        if (controller.signal.aborted) return;
+        if (error.code === "INVALID_QUERY") {
+            setDictionaryStatus(error.message, "error");
+            dictionaryInput.focus();
+        } else {
+            console.error("Could not load dictionary entry.", error);
+            setDictionaryStatus("The dictionary is unavailable right now. Check your connection and try again.", "error");
+        }
+    } finally {
+        if (dictionaryRequestController === controller) dictionaryRequestController = null;
+        dictionaryResults.classList.remove("is-loading");
+    }
+}
+
+function openDictionaryPanel() {
+    assistantHome.hidden = true;
+    grammarPanel.hidden = true;
+    closeGrammarPopover();
+    dictionaryPanel.hidden = false;
+    assistantTabs.forEach((tab) => {
+        tab.classList.remove("is-active");
+        tab.setAttribute("aria-selected", "false");
+    });
+    window.requestAnimationFrame(() => dictionaryInput.focus());
+}
+
+function closeDictionaryPanel() {
+    dictionaryRequestController?.abort();
+    dictionaryRequestController = null;
+    dictionaryPanel.hidden = true;
+    assistantHome.hidden = false;
+    assistantTabs[0]?.classList.add("is-active");
+    assistantTabs[0]?.setAttribute("aria-selected", "true");
+    openDictionaryButton.focus();
 }
 
 function positionSelectionPopover(clientX, clientY) {
@@ -1466,7 +1727,9 @@ function openSelectionPopover(selectionContext) {
     selectionPopoverAnimationTimeout = null;
     activeTextSelection = selectionContext;
     showSelectionActions();
-    selectionSynonymsButton.hidden = !isSingleSelectedWord(selectionContext.text);
+    const isSingleWord = isSingleSelectedWord(selectionContext.text);
+    selectionDefineButton.hidden = !isSingleWord;
+    selectionSynonymsButton.hidden = !isSingleWord;
     selectionContext.styleMatch = selectedReusableStyle(
         selectionContext.chapter,
         selectionContext.from,
@@ -1478,6 +1741,15 @@ function openSelectionPopover(selectionContext) {
         : "Select text using one reusable style";
     positionSelectionPopover(selectionContext.clientX, selectionContext.clientY);
     window.requestAnimationFrame(() => selectionPopover.classList.add("is-visible"));
+}
+
+function defineSelectedWord() {
+    const word = activeTextSelection?.text.trim();
+    if (!isSingleSelectedWord(word)) return;
+    closeSelectionPopover();
+    openDictionaryPanel();
+    dictionaryInput.value = word;
+    void lookupDictionaryWord(word);
 }
 
 function selectedReusableStyle(chapter, from, to) {
@@ -1551,11 +1823,6 @@ function updateReusableStyleFromSelection() {
     closeSelectionPopover();
 }
 
-function synonymPartLabel(tags) {
-    const part = tags.find((tag) => ["n", "v", "adj", "adv"].includes(tag));
-    return ({ n: "noun", v: "verb", adj: "adjective", adv: "adverb" })[part] || "";
-}
-
 function replaceSelectedText(replacement) {
     const selectionContext = activeTextSelection;
     if (!selectionContext?.chapter?.editor || selectionContext.chapter.editor.isDestroyed) return;
@@ -1585,7 +1852,7 @@ function replaceSelectedText(replacement) {
     closeSelectionPopover();
 }
 
-async function showContextualSynonyms() {
+async function showDictionarySynonyms() {
     const selectionContext = activeTextSelection;
     if (!selectionContext || !isSingleSelectedWord(selectionContext.text)) return;
     selectionActions.hidden = true;
@@ -1594,42 +1861,35 @@ async function showContextualSynonyms() {
     synonymWord.textContent = selectionContext.text;
     synonymList.replaceChildren();
     synonymStatus.className = "synonym-status is-loading";
-    synonymStatus.textContent = "Finding context-aware alternativesâ€¦";
+    synonymStatus.textContent = "Finding synonyms…";
     positionSelectionPopover(selectionContext.clientX, selectionContext.clientY);
 
     synonymRequestController?.abort();
     const controller = new AbortController();
     synonymRequestController = controller;
-    const context = neighboringWords(
-        selectionContext.chapter.editor.state.doc,
-        selectionContext.from,
-        selectionContext.to,
-    );
-
     try {
-        const synonyms = await fetchContextualSynonyms(selectionContext.text, context, {
+        const entry = await fetchDictionaryEntry(selectionContext.text, {
             signal: controller.signal,
         });
         if (controller.signal.aborted || activeTextSelection !== selectionContext) return;
+        const synonyms = entry?.synonyms || [];
         synonymStatus.className = "synonym-status";
         synonymStatus.textContent = synonyms.length
-            ? `${synonyms.length} alternatives ranked for this sentence.`
-            : "No context-matching synonyms were found.";
+            ? `${synonyms.length} synonyms from your word reference.`
+            : "No synonyms were found for this word.";
         synonyms.forEach((synonym) => {
             const button = document.createElement("button");
             button.type = "button";
             const label = document.createElement("span");
-            label.textContent = synonym.word;
-            const part = document.createElement("small");
-            part.textContent = synonymPartLabel(synonym.tags);
-            button.append(label, part);
-            button.addEventListener("click", () => replaceSelectedText(synonym.word));
+            label.textContent = synonym;
+            button.append(label);
+            button.addEventListener("click", () => replaceSelectedText(synonym));
             synonymList.append(button);
         });
         positionSelectionPopover(selectionContext.clientX, selectionContext.clientY);
     } catch (error) {
         if (controller.signal.aborted) return;
-        console.error("Could not load contextual synonyms.", error);
+        console.error("Could not load dictionary synonyms.", error);
         synonymStatus.className = "synonym-status";
         synonymStatus.textContent = "Synonyms are unavailable right now. Check your connection and try again.";
     } finally {
@@ -1908,6 +2168,7 @@ function createTemplateEditor() {
                 horizontalRule: false,
             }),
             TextStyleKit,
+            inheritedFormattingOverrideExtension,
             TextAlign.configure({ types: ["heading", "paragraph"] }),
             googleDocsShortcutsExtension,
             indentExtension,
@@ -2486,18 +2747,11 @@ function syncToolbar() {
     const textStyle = editor?.getAttributes("textStyle") || {};
     const reusableStyleKey = editor ? activeReusableStyleKey(activeChapter) : "normal";
     const reusableStyle = reusableStyleSettings(activeChapter, reusableStyleKey);
-    const explicitOpeningFormatting = reusableStyleKey === "opening"
-        && selectionHasExplicitFormatting(editor);
     toolbarButtons.forEach((button) => {
         const config = commandMap[button.dataset.command];
-        const inheritedOpeningState = reusableStyleKey === "opening"
-            && !explicitOpeningFormatting
-            && ["bold", "italic", "underline"].includes(config?.active)
-            ? Boolean(reusableStyle?.[config.active])
-            : null;
-        const isActive = inheritedOpeningState ?? Boolean(
-            editor && config?.active && editor.isActive(config.active)
-        );
+        const isActive = INLINE_FORMATS[config?.active]
+            ? effectiveFormattingState(editor, config.active)
+            : Boolean(editor && config?.active && editor.isActive(config.active));
         const canUseHistory = editor && config?.history
             ? Boolean(editor.can()[config.command]?.())
             : true;
@@ -2808,6 +3062,7 @@ function createChapterState(chapterDocument, { needsSync = false } = {}) {
                 horizontalRule: false,
             }),
             TextStyleKit,
+            inheritedFormattingOverrideExtension,
             TextAlign.configure({ types: ["heading", "paragraph"] }),
             googleDocsShortcutsExtension,
             indentExtension,
@@ -3286,6 +3541,16 @@ document.addEventListener("keydown", (event) => {
 syncProjectName();
 startRenameButtons.forEach((button) => button.addEventListener("click", startRenamingProject));
 cancelRenameButton.addEventListener("click", cancelRenamingProject);
+openDictionaryButton.addEventListener("click", openDictionaryPanel);
+closeDictionaryButton.addEventListener("click", closeDictionaryPanel);
+dictionaryForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void lookupDictionaryWord();
+});
+dictionaryExampleButtons.forEach((button) => button.addEventListener("click", () => {
+    dictionaryInput.value = button.dataset.dictionaryExample;
+    void lookupDictionaryWord();
+}));
 openGrammarButton.addEventListener("click", () => openGrammarPanel());
 closeGrammarButton.addEventListener("click", closeGrammarPanel);
 grammarPopover.addEventListener("pointerenter", () => {
@@ -3306,7 +3571,8 @@ grammarDismissButton.addEventListener("click", () => {
         reviewGrammarIssue(activeGrammarIssue.chapter, activeGrammarIssue.issue, "dismiss");
     }
 });
-selectionSynonymsButton.addEventListener("click", () => void showContextualSynonyms());
+selectionDefineButton.addEventListener("click", defineSelectedWord);
+selectionSynonymsButton.addEventListener("click", () => void showDictionarySynonyms());
 selectionUpdateStyleButton.addEventListener("click", updateReusableStyleFromSelection);
 closeSynonymsButton.addEventListener("click", showSelectionActions);
 document.addEventListener("contextmenu", (event) => {

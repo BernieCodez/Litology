@@ -5,6 +5,8 @@ import {
     filterFontCatalog,
     googleFontPreviewStylesheetUrl,
     googleFontStylesheetUrl,
+    isBuiltInFont,
+    loadLocalFont,
     loadImportedFonts,
     saveImportedFonts,
 } from "../static/js/font-library.mjs";
@@ -59,4 +61,41 @@ test("font search prioritizes prefix matches and respects its result limit", () 
         filterFontCatalog(fonts, "rob", 2).map((font) => font.family),
         ["Roboto", "Roboto Slab"]
     );
+});
+
+test("Times New Roman is a local built-in only when the browser can load it", async () => {
+    const addedFaces = [];
+    class AvailableFontFace {
+        constructor(family, source) {
+            this.family = family;
+            this.source = source;
+        }
+
+        async load() {
+            return this;
+        }
+    }
+
+    assert.equal(isBuiltInFont("Times New Roman"), true);
+    assert.equal(await loadLocalFont(
+        "Times New Roman",
+        AvailableFontFace,
+        { add: (fontFace) => addedFaces.push(fontFace) },
+    ), true);
+    assert.equal(addedFaces[0].family, "Times New Roman");
+    assert.equal(addedFaces[0].source, 'local("Times New Roman")');
+});
+
+test("an unavailable local font remains hidden", async () => {
+    class UnavailableFontFace {
+        async load() {
+            throw new Error("Font is not installed");
+        }
+    }
+
+    assert.equal(await loadLocalFont(
+        "Times New Roman",
+        UnavailableFontFace,
+        { add: () => assert.fail("An unavailable font must not be registered") },
+    ), false);
 });

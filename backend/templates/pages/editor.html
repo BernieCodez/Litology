@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.3.1/css/all.min.css">
-    <link rel="stylesheet" href="/static/css/editor.css?v=20260808-18">
+    <link rel="stylesheet" href="/static/css/editor.css?v=20260809-1">
 </head>
 <body data-project-id="{{ project_id }}" data-chapter-number="1">
     <a class="skip-link" href="#writing-area">Skip to editor</a>
@@ -24,7 +24,7 @@
                     <button class="project-name-button" type="button" data-project-name
                             aria-label="Rename {{ project_name }}">{{ project_name }}</button>
                     <button class="rename-project-button" type="button" data-start-rename
-                            aria-label="Rename project" title="Rename project">✎</button>
+                            aria-label="Rename project" title="Rename project"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
                 </div>
                 <form class="project-rename-form" data-project-rename-form hidden>
                     <label class="sr-only" for="project-name-input">Project name</label>
@@ -32,10 +32,10 @@
                            value="{{ project_name }}" autocomplete="off" required data-project-name-input>
                     <button class="rename-confirm-button" type="submit">Save</button>
                     <button class="rename-cancel-button" type="button" aria-label="Cancel rename"
-                            data-cancel-rename>×</button>
+                            data-cancel-rename><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                 </form>
             </div>
-            <button class="icon-button project-menu" type="button" aria-label="Project options">•••</button>
+            <button class="icon-button project-menu" type="button" aria-label="Project options"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
         </div>
 
         <div class="save-state" id="save-state" data-state="saved" role="status" aria-live="polite">
@@ -56,10 +56,10 @@
                 <span>Chapter settings</span>
             </button>
             <button class="secondary-button" type="button">
-                <span aria-hidden="true">↶</span> Version history
+                <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Version history
             </button>
             <button class="share-button" type="button">
-                <span aria-hidden="true">↗</span> Share
+                <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Share
             </button>
             <button class="profile-button" type="button" aria-label="Open profile menu">BC</button>
         </div>
@@ -72,42 +72,42 @@
                     <span class="eyebrow">Workspace</span>
                     <h1>Contents</h1>
                 </div>
-                <button class="icon-button" type="button" aria-label="Collapse project navigation">‹</button>
+                <button class="icon-button" type="button" aria-label="Collapse project navigation"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
             </header>
 
             <nav class="section-navigation" aria-label="Editor sections">
                 <button class="section-button is-active" type="button" aria-current="page" data-section="book">
-                    <span class="section-icon book-icon" aria-hidden="true"></span>
+                    <i class="section-icon fa-solid fa-book" aria-hidden="true"></i>
                     <span>Book</span>
-                    <span class="section-chevron" aria-hidden="true">⌄</span>
+                    <i class="section-chevron fa-solid fa-chevron-down" aria-hidden="true"></i>
                 </button>
 
                 <div class="chapter-navigation" data-chapter-navigation aria-label="Book chapters"></div>
 
                 <button class="section-button" type="button" data-section="plot">
-                    <span class="section-icon plot-icon" aria-hidden="true"></span>
+                    <i class="section-icon fa-solid fa-file-pen" aria-hidden="true"></i>
                     <span>Plot</span>
                 </button>
                 <button class="section-button" type="button" data-section="characters">
-                    <span class="section-icon characters-icon" aria-hidden="true"></span>
+                    <i class="section-icon fa-solid fa-user-group" aria-hidden="true"></i>
                     <span>Characters</span>
                 </button>
                 <button class="section-button" type="button" data-section="settings">
-                    <span class="section-icon settings-icon" aria-hidden="true"></span>
+                    <i class="section-icon fa-solid fa-mountain-city" aria-hidden="true"></i>
                     <span>Settings</span>
                 </button>
                 <button class="section-button" type="button" data-section="timeline">
-                    <span class="section-icon timeline-icon" aria-hidden="true"></span>
+                    <i class="section-icon fa-solid fa-timeline" aria-hidden="true"></i>
                     <span>Timeline</span>
                 </button>
                 <button class="section-button" type="button" data-section="miscellaneous">
-                    <span class="section-icon miscellaneous-icon" aria-hidden="true">✦</span>
+                    <i class="section-icon fa-solid fa-box-archive" aria-hidden="true"></i>
                     <span>Miscellaneous</span>
                 </button>
             </nav>
 
             <button class="add-section-button" type="button">
-                <span aria-hidden="true">＋</span>
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
                 Add section
             </button>
 
@@ -117,7 +117,7 @@
                     <strong>0 words</strong>
                     <span>No writing goal set</span>
                 </div>
-                <button class="icon-button" type="button" aria-label="Set a writing goal">＋</button>
+                <button class="icon-button" type="button" aria-label="Set a writing goal"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
             </footer>
         </aside>
 
@@ -161,7 +161,7 @@
                             <option value="Georgia">Georgia</option>
                             <option value="Arial">Arial</option>
                             <option value="Courier New">Courier New</option>
-                            <option value="__google_fonts__" data-action="font-library">＋ Import font…</option>
+                            <option value="__google_fonts__" data-action="font-library">Import font…</option>
                         </select>
                     </label>
                     <div class="font-size-picker" data-font-size-picker>
@@ -222,8 +222,8 @@
                             <option value="center">Align center</option>
                             <option value="right">Align right</option>
                             <option value="justify">Justify</option>
-                            <option value="decrease-indent" data-action="decrease-indent">← Decrease indent</option>
-                            <option value="increase-indent" data-action="increase-indent">→ Increase indent</option>
+                            <option value="decrease-indent" data-action="decrease-indent">Decrease indent</option>
+                            <option value="increase-indent" data-action="increase-indent">Increase indent</option>
                         </select>
                     </label>
                     <label class="toolbar-select-control line-height-control" title="Line spacing">
@@ -326,14 +326,14 @@
                     <i aria-hidden="true"></i>
                     <div class="zoom-control" data-zoom-control role="group" aria-label="Document zoom">
                         <button class="zoom-step" type="button" data-zoom-out
-                                aria-label="Zoom out" title="Zoom out (Ctrl+-)">−</button>
+                                aria-label="Zoom out" title="Zoom out (Ctrl+-)"><i class="fa-solid fa-minus" aria-hidden="true"></i></button>
                         <button class="zoom-trigger" type="button" data-zoom-trigger
                                 aria-haspopup="menu" aria-expanded="false" title="Change document zoom">
                             <span data-zoom-value>100%</span>
-                            <span class="zoom-chevron" aria-hidden="true">⌄</span>
+                            <i class="zoom-chevron fa-solid fa-chevron-down" aria-hidden="true"></i>
                         </button>
                         <button class="zoom-step" type="button" data-zoom-in
-                                aria-label="Zoom in" title="Zoom in (Ctrl++)">+</button>
+                                aria-label="Zoom in" title="Zoom in (Ctrl++)"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
                         <div class="zoom-menu" data-zoom-menu role="menu" aria-label="Zoom level" hidden>
                             <button type="button" role="menuitemradio" data-zoom-level="50">50%</button>
                             <button type="button" role="menuitemradio" data-zoom-level="67">67%</button>
@@ -502,13 +502,13 @@
         <aside class="right-sidebar" aria-label="Athena writing assistant">
             <header class="athena-header">
                 <div class="athena-identity">
-                    <span class="athena-mark" aria-hidden="true">✦</span>
+                    <span class="athena-mark" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
                     <div>
                         <span class="eyebrow">Writing companion</span>
                         <h2>Athena</h2>
                     </div>
                 </div>
-                <button class="icon-button" type="button" aria-label="Collapse Athena">›</button>
+                <button class="icon-button" type="button" aria-label="Collapse Athena"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
             </header>
 
             <div class="assistant-tabs" role="tablist" aria-label="Assistant views">
@@ -520,7 +520,7 @@
             <div class="assistant-content">
                 <div data-assistant-home>
                 <section class="assistant-empty">
-                    <div class="empty-athena-mark" aria-hidden="true">✦</div>
+                    <div class="empty-athena-mark" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                     <h3>Your page is ready.</h3>
                     <p>When you’re ready, ask Athena about your manuscript.</p>
                 </section>
@@ -529,36 +529,71 @@
                     <label for="athena-prompt">Ask Athena</label>
                     <textarea id="athena-prompt" rows="4" placeholder="Ask about your writing…"></textarea>
                     <div class="prompt-actions">
-                        <button type="button" aria-label="Attach context">＋</button>
+                        <button type="button" aria-label="Attach context"><i class="fa-solid fa-paperclip" aria-hidden="true"></i></button>
                         <span>Manuscript context</span>
-                        <button class="send-button" type="button" aria-label="Send message">↑</button>
+                        <button class="send-button" type="button" aria-label="Send message"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
                     </div>
                 </div>
 
                 <section class="assistant-tools" aria-labelledby="tools-heading">
                     <h3 id="tools-heading">Writing tools</h3>
                     <button class="assistant-tool" type="button">
-                        <span class="tool-icon tips-icon">✦</span>
+                        <span class="tool-icon tips-icon" aria-hidden="true"><i class="fa-solid fa-lightbulb"></i></span>
                         <span><strong>Tips</strong><small>Writing and craft guidance</small></span>
-                        <span aria-hidden="true">›</span>
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                     </button>
-                    <button class="assistant-tool" type="button">
-                        <span class="tool-icon dictionary-icon">Aa</span>
+                    <button class="assistant-tool" type="button" data-open-dictionary>
+                        <span class="tool-icon dictionary-icon" aria-hidden="true"><i class="fa-solid fa-book-open"></i></span>
                         <span><strong>Dictionary &amp; thesaurus</strong><small>Definitions and alternatives</small></span>
-                        <span aria-hidden="true">›</span>
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                     </button>
                     <button class="assistant-tool" type="button" data-open-grammar>
-                        <span class="tool-icon grammar-icon">✓</span>
+                        <span class="tool-icon grammar-icon" aria-hidden="true"><i class="fa-solid fa-spell-check"></i></span>
                         <span><strong>Grammar checker</strong><small>Review spelling and clarity</small></span>
-                        <span aria-hidden="true">›</span>
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                     </button>
                     <button class="assistant-tool" type="button">
-                        <span class="tool-icon originality-icon">≋</span>
+                        <span class="tool-icon originality-icon" aria-hidden="true"><i class="fa-solid fa-fingerprint"></i></span>
                         <span><strong>Plagiarism checker</strong><small>Check originality</small></span>
-                        <span aria-hidden="true">›</span>
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                     </button>
                 </section>
                 </div>
+
+                <section class="dictionary-panel" data-dictionary-panel hidden aria-labelledby="dictionary-panel-heading">
+                    <button class="grammar-back-button" type="button" data-close-dictionary>
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Writing tools
+                    </button>
+                    <header class="dictionary-panel-header">
+                        <span class="eyebrow">Word reference</span>
+                        <h3 id="dictionary-panel-heading">Dictionary &amp; thesaurus</h3>
+                        <p>Look up a word without leaving your manuscript.</p>
+                    </header>
+
+                    <form class="dictionary-search" data-dictionary-form role="search">
+                        <label class="sr-only" for="dictionary-search-input">Search for a word</label>
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="dictionary-search-input" type="search" placeholder="Search a word…"
+                               autocomplete="off" autocapitalize="none" spellcheck="false" data-dictionary-input>
+                        <button type="submit" aria-label="Look up word">
+                            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                        </button>
+                    </form>
+
+                    <div class="dictionary-status" data-dictionary-status aria-live="polite"></div>
+                    <div class="dictionary-results" data-dictionary-results>
+                        <div class="dictionary-empty-state">
+                            <span aria-hidden="true"><i class="fa-solid fa-book-open"></i></span>
+                            <strong>Find the right word</strong>
+                            <p>See definitions, usage examples, synonyms, and antonyms in one place.</p>
+                            <div aria-label="Example searches">
+                                <button type="button" data-dictionary-example="luminous">luminous</button>
+                                <button type="button" data-dictionary-example="wander">wander</button>
+                                <button type="button" data-dictionary-example="quiet">quiet</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
                 <section class="grammar-panel" data-grammar-panel hidden aria-labelledby="grammar-panel-heading">
                     <button class="grammar-back-button" type="button" data-close-grammar>
@@ -615,7 +650,7 @@
                 <p>Set the details Litology applies consistently across this book.</p>
             </div>
             <button class="icon-button" type="button" aria-label="Close chapter settings"
-                    data-close-chapter-settings>&times;</button>
+                    data-close-chapter-settings><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </header>
 
         <div class="chapter-settings-body">
@@ -707,7 +742,7 @@
                 <p>Import a font once, then use it anywhere in your manuscript.</p>
             </div>
             <button class="icon-button" type="button" aria-label="Close font library"
-                    data-close-font-library>&times;</button>
+                    data-close-font-library><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </header>
         <div class="font-search">
             <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
@@ -729,10 +764,10 @@
                 <span class="eyebrow">Project activity</span>
                 <h2>Version history</h2>
             </div>
-            <button class="icon-button" type="button" aria-label="Close version history">×</button>
+            <button class="icon-button" type="button" aria-label="Close version history"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </header>
         <div class="history-empty">
-            <span aria-hidden="true">↶</span>
+            <span aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
             <h3>No versions yet</h3>
             <p>Saved versions and collaborator changes will appear here.</p>
         </div>
@@ -755,6 +790,11 @@
                 <i class="fa-regular fa-comment" aria-hidden="true"></i>
                 <span>Comment</span>
             </button>
+            <button type="button" data-selection-define hidden>
+                <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+                <span>Define</span>
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
             <button type="button" data-selection-synonyms hidden>
                 <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i>
                 <span>Synonyms</span>
@@ -774,7 +814,7 @@
             </header>
             <div class="synonym-status" data-synonym-status aria-live="polite"></div>
             <div class="synonym-list" data-synonym-list></div>
-            <footer>Context-ranked by Datamuse</footer>
+            <footer>From your word reference</footer>
         </div>
     </div>
 
@@ -804,7 +844,7 @@
         </button>
     </div>
 
-    <script type="module" src="/static/js/editor.js?v=20260808-24"></script>
+    <script type="module" src="/static/js/editor.js?v=20260809-3"></script>
     <script type="module" src="/static/js/workspaces.js?v=20260807-4"></script>
 </body>
 </html>

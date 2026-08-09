@@ -83,3 +83,18 @@ test("scene breaks have safe toolbar insertion, preset controls, and toolbar sty
 test("title text has no automatic divider line", () => {
     assert.match(editorCss, /\.tiptap h1\s*\{[^}]*border-bottom:\s*0;/s);
 });
+
+test("editor text blocks share compact spacing and scene breaks use selection highlighting", () => {
+    assert.match(
+        editorCss,
+        /\.tiptap p,\s*\.tiptap h1,\s*\.tiptap h2,\s*\.tiptap h3,\s*\.tiptap h4,\s*\.tiptap h5\s*\{[^}]*margin:\s*0 0 12px;/s,
+    );
+    assert.match(
+        editorCss,
+        /\.chapter-section \.tiptap hr\s*\{[^}]*height:\s*24px;[^}]*min-height:\s*24px;[^}]*margin:\s*8px auto;/s,
+    );
+    assert.match(
+        editorCss,
+        /hr\.ProseMirror-selectednode\s*\{[^}]*outline:\s*none;[^}]*background:\s*rgba\(200, 214, 175, 0\.72\);/s,
+    );
+});

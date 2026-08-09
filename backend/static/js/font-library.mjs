@@ -1,4 +1,8 @@
-import { FONT_OPTIONS, isSafeFontFamily } from "./chapter-customization.mjs?v=20260807-2";
+import {
+    FONT_OPTIONS,
+    isSafeFontFamily,
+    OPTIONAL_LOCAL_FONT_OPTIONS,
+} from "./chapter-customization.mjs?v=20260808-8";
 
 export const IMPORTED_FONT_STORAGE_KEY = "litology.googleFonts";
 
@@ -35,7 +39,28 @@ export function googleFontPreviewStylesheetUrl(families) {
 }
 
 export function isBuiltInFont(family) {
-    return FONT_OPTIONS.includes(family);
+    return FONT_OPTIONS.includes(family) || OPTIONAL_LOCAL_FONT_OPTIONS.includes(family);
+}
+
+export function isOptionalLocalFont(family) {
+    return OPTIONAL_LOCAL_FONT_OPTIONS.includes(family);
+}
+
+export async function loadLocalFont(
+    family,
+    FontFaceConstructor = globalThis.FontFace,
+    fontSet = globalThis.document?.fonts,
+) {
+    if (!isOptionalLocalFont(family) || !FontFaceConstructor || !fontSet?.add) return false;
+
+    try {
+        const fontFace = new FontFaceConstructor(family, `local("${family}")`);
+        const loadedFontFace = await fontFace.load();
+        fontSet.add(loadedFontFace);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 export function filterFontCatalog(fonts, query, limit = 80) {

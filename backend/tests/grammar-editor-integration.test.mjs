@@ -43,11 +43,17 @@ test("grammar highlights do not use a click handler and popovers animate both wa
     assert.match(editorCss, /\.grammar-popover\.is-leaving/);
 });
 
-test("selected manuscript text exposes comment and contextual synonym actions", () => {
+test("selected manuscript text exposes comment, definition, and dictionary synonym actions", () => {
     assert.match(editorTemplate, /data-selection-comment/);
+    assert.match(editorTemplate, /data-selection-define/);
     assert.match(editorTemplate, /data-selection-synonyms/);
     assert.match(editorJavaScript, /addEventListener\("contextmenu"/);
-    assert.match(editorJavaScript, /fetchContextualSynonyms/);
+    assert.match(editorJavaScript, /function defineSelectedWord/);
+    assert.match(editorJavaScript, /lookupDictionaryWord\(word\)/);
+    assert.match(editorJavaScript, /function showDictionarySynonyms/);
+    assert.match(editorJavaScript, /fetchDictionaryEntry\(selectionContext\.text/);
+    assert.match(editorJavaScript, /const synonyms = entry\?\.synonyms \|\| \[\]/);
+    assert.doesNotMatch(editorJavaScript, /fetchContextualSynonyms/);
     assert.match(editorCss, /\.selection-popover\.is-visible/);
 });
 
@@ -71,6 +77,16 @@ test("temporary toolbar formatting visibly overrides the generated opening text 
     assert.match(editorJavaScript, /function openingRangeHasStyleOverride/);
     assert.match(editorJavaScript, /chapter-opening-text has-style-override/);
     assert.match(editorCss, /\.chapter-opening-text:not\(\.has-style-override\)/);
+});
+
+test("inline formatting can explicitly disable inherited reusable formatting", () => {
+    assert.match(editorJavaScript, /inheritedFormattingOverrideExtension/);
+    assert.match(editorJavaScript, /effectiveFormattingState/);
+    assert.match(editorJavaScript, /toggleInlineFormatting/);
+    assert.match(editorCss, /\[data-bold-override="off"\]/);
+    assert.match(editorCss, /\[data-italic-override="off"\]/);
+    assert.match(editorCss, /\[data-underline-override="off"\]/);
+    assert.match(editorCss, /\[data-strike-override="off"\]/);
 });
 
 test("the block style dropdown previews each reusable text style", () => {
