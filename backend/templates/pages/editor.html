@@ -253,6 +253,47 @@
                 </button>
             </div>
 
+            <section class="find-replace-bar" aria-label="Find and replace" data-find-replace hidden>
+                <div class="find-replace-row">
+                    <label class="sr-only" for="editor-find-input">Find in manuscript</label>
+                    <div class="find-input-wrap">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="editor-find-input" type="search" autocomplete="off" spellcheck="false"
+                               placeholder="Find" data-find-input aria-describedby="find-match-count">
+                    </div>
+                    <span class="find-match-count" id="find-match-count" role="status" aria-live="polite"
+                          data-find-count>0 of 0</span>
+                    <button class="find-icon-button" type="button" data-find-previous
+                            aria-label="Previous match" title="Previous match (Shift+Enter)">
+                        <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+                    </button>
+                    <button class="find-icon-button" type="button" data-find-next
+                            aria-label="Next match" title="Next match (Enter)">
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <button class="find-icon-button" type="button" data-close-find
+                            aria-label="Close find and replace" title="Close (Escape)">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="find-replace-row find-replace-options">
+                    <label class="sr-only" for="editor-replace-input">Replace with</label>
+                    <input class="replace-input" id="editor-replace-input" type="text" autocomplete="off"
+                           spellcheck="false" placeholder="Replace with" data-replace-input>
+                    <button class="find-action-button" type="button" data-replace-one>Replace</button>
+                    <button class="find-action-button" type="button" data-replace-all>Replace all</button>
+                    <button class="find-toggle-button" type="button" data-find-case-sensitive
+                            aria-pressed="false" aria-label="Match case" title="Match case">Aa</button>
+                    <button class="find-toggle-button" type="button" data-find-whole-word
+                            aria-pressed="false" aria-label="Match whole word" title="Match whole word">Word</button>
+                    <label class="find-scope-label" for="editor-find-scope">Scope</label>
+                    <select id="editor-find-scope" data-find-scope aria-label="Search scope">
+                        <option value="chapter">Current chapter</option>
+                        <option value="book">All chapters</option>
+                    </select>
+                </div>
+            </section>
+
             <section class="document-scroll chapter-template-page" data-chapter-customizer hidden
                      aria-labelledby="chapter-template-heading">
                 <h2 class="sr-only" id="chapter-template-heading">Edit chapter template</h2>
@@ -763,7 +804,7 @@
         </button>
     </div>
 
-    <script type="module" src="/static/js/editor.js?v=20260808-23"></script>
+    <script type="module" src="/static/js/editor.js?v=20260808-24"></script>
     <script type="module" src="/static/js/workspaces.js?v=20260807-4"></script>
 </body>
 </html>

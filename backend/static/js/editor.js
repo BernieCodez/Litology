@@ -55,6 +55,11 @@ import {
     stepEditorZoom,
 } from "/static/js/editor-zoom.mjs?v=20260808-1";
 import {
+    findTextMatches,
+    initialMatchIndex,
+    steppedMatchIndex,
+} from "/static/js/editor-find.mjs?v=20260808-1";
+import {
     analyzeText,
     grammarQuality,
     suggestionLabel,
@@ -90,6 +95,18 @@ const saveStateLabel = document.querySelector("[data-save-state-label]");
 const chapterStack = document.querySelector("[data-chapter-stack]");
 const chapterNavigation = document.querySelector("[data-chapter-navigation]");
 const bookScroll = document.querySelector("[data-book-scroll]");
+const findReplaceBar = document.querySelector("[data-find-replace]");
+const findInput = document.querySelector("[data-find-input]");
+const replaceInput = document.querySelector("[data-replace-input]");
+const findCount = document.querySelector("[data-find-count]");
+const findPreviousButton = document.querySelector("[data-find-previous]");
+const findNextButton = document.querySelector("[data-find-next]");
+const closeFindButton = document.querySelector("[data-close-find]");
+const replaceOneButton = document.querySelector("[data-replace-one]");
+const replaceAllButton = document.querySelector("[data-replace-all]");
+const findCaseSensitiveButton = document.querySelector("[data-find-case-sensitive]");
+const findWholeWordButton = document.querySelector("[data-find-whole-word]");
+const findScopeControl = document.querySelector("[data-find-scope]");
 const toolbarButtons = [...document.querySelectorAll("[data-command]")];
 const alignmentMenu = document.querySelector("[data-alignment-menu]");
 const alignmentIcon = document.querySelector("[data-alignment-icon]");
@@ -214,6 +231,19 @@ let revisionClock = Date.now();
 let addChapterInProgress = false;
 let scrollFrame = null;
 let editorZoom = 100;
+const findState = {
+    open: false,
+    query: "",
+    caseSensitive: false,
+    wholeWord: false,
+    scope: "chapter",
+    scopeChapter: null,
+    matches: [],
+    currentIndex: -1,
+    savedChapter: null,
+    savedSelection: null,
+    refreshFrame: null,
+};
 let currentProjectName = projectNames[projectId]
     || projectNameButton?.textContent.trim()
     || "Untitled Project";
@@ -586,6 +616,293 @@ function selectionUsesOpeningStyle(chapter, from, to) {
     if (!range) return false;
     if (from === to) return from >= range.from && from <= range.to;
     return from >= range.from && to <= range.to;
+}
+
+function searchableTextSegments(documentNode) {
+    const segments = [];
+
+    documentNode.descendants((node, position) => {
+        if (!node.isTextblock) return true;
+        let text = "";
+        let positions = [];
+        const flush = () => {
+            if (text) segments.push({ text, positions });
+            text = "";
+            positions = [];
+        };
+
+        node.descendants((child, childPosition) => {
+            if (child.isText && child.text) {
+                for (let index = 0; index < child.text.length; index += 1) {
+                    text += child.text[index];
+                    positions.push(position + 1 + childPosition + index);
+                }
+            } else if (child.isLeaf) {
+                flush();
+            }
+            return !child.isTextblock;
+        });
+        flush();
+        return false;
+    });
+
+    return segments;
+}
+
+function searchRangesForDocument(documentNode) {
+    if (!findState.open || !findState.query) return [];
+    const ranges = [];
+
+    searchableTextSegments(documentNode).forEach(({ text, positions }) => {
+        findTextMatches(text, findState.query, {
+            caseSensitive: findState.caseSensitive,
+            wholeWord: findState.wholeWord,
+        }).forEach((match) => {
+            ranges.push({
+                from: positions[match.from],
+                to: positions[match.to - 1] + 1,
+            });
+        });
+    });
+
+    return ranges;
+}
+
+function searchDecorations(documentNode, chapter) {
+    const current = findState.matches[findState.currentIndex];
+    const decorations = searchRangesForDocument(documentNode).map((range) => {
+        const isCurrent = current
+            && current.chapter === chapter
+            && current.from === range.from
+            && current.to === range.to;
+        return Decoration.inline(range.from, range.to, {
+            class: isCurrent ? "find-match is-current" : "find-match",
+            ...(isCurrent ? { "data-find-current": "" } : {}),
+        });
+    });
+    return DecorationSet.create(documentNode, decorations);
+}
+
+function findReplaceExtension(chapter) {
+    return Extension.create({
+        name: `findReplace${chapter.number}`,
+        addProseMirrorPlugins() {
+            const searchPlugin = new Plugin({
+                state: {
+                    init: (_, state) => searchDecorations(state.doc, chapter),
+                    apply(transaction, decorations, _oldState, newState) {
+                        if (transaction.docChanged || transaction.getMeta("findRefresh")) {
+                            return searchDecorations(newState.doc, chapter);
+                        }
+                        return decorations.map(transaction.mapping, transaction.doc);
+                    },
+                },
+                props: {
+                    decorations: (state) => searchPlugin.getState(state),
+                },
+            });
+            return [searchPlugin];
+        },
+    });
+}
+
+function chaptersInFindScope() {
+    if (findState.scope === "book") return chapterStates;
+    const chapter = chapterStates.includes(findState.scopeChapter)
+        ? findState.scopeChapter
+        : currentChapter || chapterStates[0];
+    return chapter ? [chapter] : [];
+}
+
+function currentFindMatch() {
+    return findState.matches[findState.currentIndex] || null;
+}
+
+function refreshFindDecorations() {
+    chapterStates.forEach((chapter) => {
+        if (!chapter.editor || chapter.editor.isDestroyed) return;
+        chapter.editor.view.dispatch(chapter.editor.state.tr.setMeta("findRefresh", true));
+    });
+}
+
+function syncFindControls() {
+    const matchCount = findState.matches.length;
+    findCount.textContent = findState.query && matchCount
+        ? `${findState.currentIndex + 1} of ${matchCount}`
+        : `0 of ${matchCount}`;
+    [findPreviousButton, findNextButton, replaceOneButton, replaceAllButton]
+        .forEach((button) => { button.disabled = matchCount === 0; });
+}
+
+function findAnchor() {
+    const chapter = findState.scope === "chapter"
+        ? findState.scopeChapter || currentChapter
+        : findState.savedChapter || currentChapter;
+    const savedPosition = findState.savedSelection?.from !== findState.savedSelection?.to
+        ? findState.savedSelection?.from
+        : findState.savedSelection?.to;
+    const position = chapter === findState.savedChapter
+        ? savedPosition ?? chapter?.editor?.state.selection.to ?? 0
+        : chapter?.editor?.state.selection.to ?? 0;
+    return { chapter, position };
+}
+
+function syncFindResults({ resetCurrent = false, preferredMatch = null, scroll = true } = {}) {
+    const previous = resetCurrent ? null : (preferredMatch || currentFindMatch());
+    findState.matches = chaptersInFindScope().flatMap((chapter) => (
+        searchRangesForDocument(chapter.editor.state.doc).map((range) => ({ chapter, ...range }))
+    ));
+
+    if (!findState.matches.length) {
+        findState.currentIndex = -1;
+    } else if (previous) {
+        const exactIndex = findState.matches.findIndex((match) => (
+            match.chapter === previous.chapter
+            && match.from === previous.from
+            && match.to === previous.to
+        ));
+        const followingIndex = findState.matches.findIndex((match) => (
+            match.chapter === previous.chapter && match.from >= previous.from
+        ));
+        findState.currentIndex = exactIndex >= 0
+            ? exactIndex
+            : followingIndex >= 0 ? followingIndex : 0;
+    } else {
+        const anchor = findAnchor();
+        findState.currentIndex = initialMatchIndex(
+            findState.matches,
+            anchor.chapter,
+            anchor.position,
+        );
+    }
+
+    syncFindControls();
+    refreshFindDecorations();
+    if (scroll) scrollCurrentFindMatch();
+}
+
+function scheduleFindResultsSync() {
+    if (!findState.open || findState.refreshFrame !== null) return;
+    findState.refreshFrame = window.requestAnimationFrame(() => {
+        findState.refreshFrame = null;
+        syncFindResults({ scroll: false });
+    });
+}
+
+function scrollCurrentFindMatch() {
+    const match = currentFindMatch();
+    if (!match) return;
+    setCurrentChapter(match.chapter);
+    const highlight = match.chapter.article.querySelector("[data-find-current]");
+    highlight?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+}
+
+function navigateFind(direction) {
+    findState.currentIndex = steppedMatchIndex(
+        findState.currentIndex,
+        findState.matches.length,
+        direction,
+    );
+    syncFindControls();
+    refreshFindDecorations();
+    scrollCurrentFindMatch();
+}
+
+function rememberWriterSelectionForFind(chapter) {
+    if (!findState.open || findState.savedChapter !== chapter) return;
+    const { anchor, head, from, to } = chapter.editor.state.selection;
+    findState.savedSelection = { anchor, head, from, to };
+}
+
+function selectedFindText(chapter, selection) {
+    if (!chapter || !selection || selection.empty) return "";
+    const text = chapter.editor.state.doc.textBetween(selection.from, selection.to, " ", " ");
+    return text.length <= 200 && !/[\r\n]/.test(text) ? text : "";
+}
+
+function openFindReplace() {
+    if (findState.open) {
+        findInput.focus();
+        findInput.select();
+        return;
+    }
+
+    const chapter = chapterStates.includes(activeChapter)
+        ? activeChapter
+        : currentChapter || chapterStates[0];
+    if (!chapter) return;
+    const selection = chapter.editor.state.selection;
+    findState.open = true;
+    findState.scopeChapter = chapter;
+    findState.savedChapter = chapter;
+    findState.savedSelection = {
+        anchor: selection.anchor,
+        head: selection.head,
+        from: selection.from,
+        to: selection.to,
+    };
+    const selectedText = selectedFindText(chapter, selection);
+    if (selectedText) findInput.value = selectedText;
+    findState.query = findInput.value;
+    findReplaceBar.hidden = false;
+    syncFindResults({ resetCurrent: true });
+    findInput.focus();
+    findInput.select();
+}
+
+function closeFindReplace({ restoreSelection = true } = {}) {
+    if (!findState.open) return;
+    if (findState.refreshFrame !== null) {
+        window.cancelAnimationFrame(findState.refreshFrame);
+        findState.refreshFrame = null;
+    }
+    const chapter = findState.savedChapter;
+    findState.open = false;
+    findState.matches = [];
+    findState.currentIndex = -1;
+    findReplaceBar.hidden = true;
+    syncFindControls();
+    refreshFindDecorations();
+
+    if (restoreSelection && chapter?.editor && !chapter.editor.isDestroyed) {
+        chapter.editor.commands.focus();
+    }
+}
+
+function replaceCurrentFindMatch() {
+    const match = currentFindMatch();
+    if (!match) return;
+    const currentText = match.chapter.editor.state.doc.textBetween(match.from, match.to);
+    if (currentText === replaceInput.value) {
+        navigateFind(1);
+        return;
+    }
+    const preferredMatch = { ...match, to: match.from };
+    match.chapter.editor.view.dispatch(
+        match.chapter.editor.state.tr.insertText(replaceInput.value, match.from, match.to),
+    );
+    syncFindResults({ preferredMatch });
+}
+
+function replaceAllFindMatches() {
+    if (!findState.matches.length) return;
+    const matchesByChapter = new Map();
+    findState.matches.forEach((match) => {
+        const currentText = match.chapter.editor.state.doc.textBetween(match.from, match.to);
+        if (currentText === replaceInput.value) return;
+        const matches = matchesByChapter.get(match.chapter) || [];
+        matches.push(match);
+        matchesByChapter.set(match.chapter, matches);
+    });
+
+    matchesByChapter.forEach((matches, chapter) => {
+        const transaction = chapter.editor.state.tr;
+        [...matches].reverse().forEach((match) => {
+            transaction.insertText(replaceInput.value, match.from, match.to);
+        });
+        chapter.editor.view.dispatch(transaction);
+    });
+    syncFindResults({ resetCurrent: true });
 }
 
 function grammarIssuesForDocument(documentNode) {
@@ -1620,6 +1937,7 @@ function createTemplateEditor() {
 }
 
 function openChapterCustomizer() {
+    if (findState.open) closeFindReplace({ restoreSelection: false });
     chapterTemplateDraft = normalizeChapterSettings(chapterTemplateSettings);
     chapterCustomizerOpen = true;
     bookScroll.hidden = true;
@@ -2495,6 +2813,7 @@ function createChapterState(chapterDocument, { needsSync = false } = {}) {
             indentExtension,
             sceneBreakExtension,
             openingTextExtension(chapter),
+            findReplaceExtension(chapter),
             grammarExtension(chapter),
             Placeholder.configure({
                 placeholder: ({ node }) => node.type.name === "heading"
@@ -2515,9 +2834,11 @@ function createChapterState(chapterDocument, { needsSync = false } = {}) {
             syncStats();
             syncToolbar();
             scheduleChapterSave(chapter);
+            scheduleFindResultsSync();
         },
         onSelectionUpdate: () => {
             activeChapter = chapter;
+            rememberWriterSelectionForFind(chapter);
             syncToolbar();
         },
     });
@@ -2908,6 +3229,59 @@ function closeFontLibrary() {
     fontLibraryTrigger?.focus();
     fontLibraryTrigger = null;
 }
+
+findInput.addEventListener("input", () => {
+    findState.query = findInput.value;
+    syncFindResults({ resetCurrent: true });
+});
+findPreviousButton.addEventListener("click", () => navigateFind(-1));
+findNextButton.addEventListener("click", () => navigateFind(1));
+closeFindButton.addEventListener("click", () => closeFindReplace());
+replaceOneButton.addEventListener("click", replaceCurrentFindMatch);
+replaceAllButton.addEventListener("click", replaceAllFindMatches);
+findCaseSensitiveButton.addEventListener("click", () => {
+    findState.caseSensitive = !findState.caseSensitive;
+    findCaseSensitiveButton.setAttribute("aria-pressed", String(findState.caseSensitive));
+    syncFindResults({ resetCurrent: true });
+});
+findWholeWordButton.addEventListener("click", () => {
+    findState.wholeWord = !findState.wholeWord;
+    findWholeWordButton.setAttribute("aria-pressed", String(findState.wholeWord));
+    syncFindResults({ resetCurrent: true });
+});
+findScopeControl.addEventListener("change", () => {
+    findState.scope = findScopeControl.value;
+    if (findState.scope === "chapter") {
+        findState.scopeChapter = currentChapter || findState.savedChapter || chapterStates[0];
+    }
+    syncFindResults({ resetCurrent: true });
+});
+document.addEventListener("keydown", (event) => {
+    const findShortcut = (event.ctrlKey || event.metaKey)
+        && !event.altKey
+        && event.key.toLocaleLowerCase() === "f";
+    if (findShortcut && !statusBar.hidden && !chapterCustomizerOpen) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        openFindReplace();
+        return;
+    }
+    if (!findState.open) return;
+    if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        closeFindReplace();
+        return;
+    }
+    if (
+        event.key === "Enter"
+        && (event.target === findInput || event.target === replaceInput)
+    ) {
+        event.preventDefault();
+        event.stopPropagation();
+        navigateFind(event.shiftKey ? -1 : 1);
+    }
+}, { capture: true });
 
 syncProjectName();
 startRenameButtons.forEach((button) => button.addEventListener("click", startRenamingProject));
